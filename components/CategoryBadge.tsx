@@ -7,7 +7,7 @@ export function CategoryBadge({
   category: Category;
   size?: "sm" | "md";
 }) {
-  const meta = categoryMeta[category];
+  const meta = categoryMeta[category] ?? categoryMeta.city;
   return (
     <span
       className={[
@@ -26,7 +26,10 @@ export function CategoryDot({ category }: { category: Category }) {
   return (
     <span
       aria-hidden
-      className={["inline-block h-2.5 w-2.5 rounded-full", categoryMeta[category].dot].join(" ")}
+      className={[
+        "inline-block h-2.5 w-2.5 rounded-full",
+        (categoryMeta[category] ?? categoryMeta.city).dot,
+      ].join(" ")}
     />
   );
 }

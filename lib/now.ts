@@ -177,7 +177,7 @@ export function buildSteps(
         city: d.city,
         minutes: timeToMinutes(a.time) ?? 12 * 60,
         time: a.time,
-        icon: categoryMeta[a.category].emoji,
+        icon: (categoryMeta[a.category] ?? categoryMeta.city).emoji,
         action: activityAction(a),
         title: a.title,
         detail: a.description || undefined,
