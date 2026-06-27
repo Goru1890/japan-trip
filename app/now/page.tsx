@@ -5,63 +5,111 @@ import {
   getVisibleActivities,
   getVisibleReservations,
 } from "@/lib/db/queries";
-import { days as scaffold, type Category } from "@/lib/trip";
-import { computeNow, type NowActivity } from "@/lib/now";
-import { mapsUrl } from "@/lib/links";
+import { type Category } from "@/lib/trip";
+import {
+  computeNextSteps,
+  cityForDay,
+  type NowActivity,
+  type NowReservation,
+  type Step,
+} from "@/lib/now";
 import { Icon } from "@/components/Icon";
-import { CategoryBadge } from "@/components/CategoryBadge";
-import { MustDoBadge, SecretBadge } from "@/components/Badge";
+import { SecretBadge } from "@/components/Badge";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Now · Japan Trip" };
 
-const cityForDay = (n: number) => scaffold.find((d) => d.day === n)?.city ?? "";
-
-function ActivityCard({
-  act,
-  tone = "next",
-}: {
-  act: NowActivity;
-  tone?: "now" | "next";
-}) {
+function StepActions({ step }: { step: Step }) {
+  if (!step.mapsUrl && !step.linkUrl) return null;
   return (
-    <div
-      className={[
-        "rounded-lg border p-5 shadow-soft",
-        tone === "now" ? "border-matcha/50 bg-matcha/10" : "border-ink/10 bg-white",
-      ].join(" ")}
-    >
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink/55">
-        {tone === "now" ? "Happening around now" : "Up next"}
-        <span>·</span>
-        <span>
-          Day {act.dayNumber} · {cityForDay(act.dayNumber)}
-        </span>
-        {act.time && <span>· {act.time}</span>}
-      </div>
-      <h2 className="mt-1 text-xl font-bold text-ink">{act.title}</h2>
-      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <CategoryBadge category={act.category} />
-        {act.mustDo && <MustDoBadge />}
-        {act.isSecret && <SecretBadge />}
-      </div>
-      {act.description && (
-        <p className="mt-2 text-sm text-ink/70">{act.description}</p>
+    <div className="mt-3 flex flex-wrap gap-2">
+      {step.mapsUrl && (
+        <a
+          href={step.mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-paper hover:bg-ink/90"
+        >
+          📍 Open in Maps ↗
+        </a>
       )}
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink/60">
-        {act.cost && <span>💴 {act.cost}</span>}
-        {act.location && (
-          <a
-            href={mapsUrl(act.location)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-red hover:underline"
-          >
-            📍 Open in Maps ↗
-          </a>
-        )}
-      </div>
+      {step.linkUrl && (
+        <a
+          href={step.linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink hover:bg-ink/5"
+        >
+          {step.linkLabel ?? "Open"} ↗
+        </a>
+      )}
     </div>
+  );
+}
+
+function NextHero({ step, label }: { step: Step; label: string }) {
+  return (
+    <div className="rounded-lg border border-red/30 bg-white p-5 shadow-soft">
+      <div className="text-xs font-semibold uppercase tracking-wide text-red">
+        {label}
+      </div>
+      <div className="mt-1 flex items-start gap-3">
+        <span className="text-3xl leading-none" aria-hidden>
+          {step.icon}
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold text-ink">
+            <span className="text-ink/60">{step.action} </span>
+            {step.title}
+            {step.isSecret && (
+              <span className="ml-2 align-middle">
+                <SecretBadge />
+              </span>
+            )}
+          </h2>
+          <p className="mt-0.5 text-sm text-ink/55">
+            Day {step.dayNumber} · {cityForDay(step.dayNumber)}
+            {step.time ? ` · ${step.time}` : ""}
+          </p>
+          {step.detail && (
+            <p className="mt-1.5 text-sm text-ink/70">{step.detail}</p>
+          )}
+        </div>
+      </div>
+      <StepActions step={step} />
+    </div>
+  );
+}
+
+function StepRow({ step }: { step: Step }) {
+  return (
+    <li className="flex items-center gap-3 px-4 py-3">
+      <span className="w-16 shrink-0 text-xs font-semibold tabular-nums text-ink/45">
+        {step.time ?? (step.kind === "hotel" ? "night" : step.kind === "travel" ? "travel" : "")}
+      </span>
+      <span className="text-lg" aria-hidden>
+        {step.icon}
+      </span>
+      <span className="min-w-0 flex-1 text-sm text-ink">
+        <span className="text-ink/55">{step.action} </span>
+        <span className="font-medium">{step.title}</span>
+        {step.isSecret && (
+          <span className="ml-1.5 align-middle">
+            <SecretBadge />
+          </span>
+        )}
+      </span>
+      {step.mapsUrl && (
+        <a
+          href={step.mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-xs font-medium text-red hover:underline"
+        >
+          Map ↗
+        </a>
+      )}
+    </li>
   );
 }
 
@@ -89,17 +137,18 @@ export default async function NowPage() {
     isSecret: a.isSecret,
   }));
 
-  const result = computeNow(startDate, nowActs, new Date(), scaffold.length);
+  const nowResvs: NowReservation[] = resvs.map((r) => ({
+    id: r.id,
+    type: r.type,
+    title: r.title,
+    startsAt: r.startsAt ? new Date(r.startsAt) : null,
+    dayNumber: r.dayNumber,
+    confirmation: r.confirmation,
+    url: r.url,
+    isSecret: r.isSecret,
+  }));
 
-  const nowMs = Date.now();
-  const nextResv =
-    resvs
-      .filter((r) => r.startsAt && new Date(r.startsAt).getTime() >= nowMs)
-      .sort(
-        (a, b) =>
-          new Date(a.startsAt as Date).getTime() -
-          new Date(b.startsAt as Date).getTime()
-      )[0] ?? null;
+  const result = computeNextSteps(startDate, nowActs, nowResvs, new Date());
 
   return (
     <div className="space-y-5">
@@ -109,20 +158,20 @@ export default async function NowPage() {
           <h1 className="text-2xl font-bold tracking-tight text-ink">
             What now{session?.name ? `, ${session.name}` : ""}?
           </h1>
-          <p className="text-sm text-ink/60">Based on the current time in Japan.</p>
+          <p className="text-sm text-ink/60">
+            Your next move — by the current time in Japan.
+          </p>
         </div>
       </div>
 
       {result.phase === "before" && (
-        <div className="rounded-lg border border-sky/40 bg-sky/10 p-5 text-ink shadow-soft">
+        <div className="rounded-lg border border-sky/40 bg-sky/10 p-4 text-ink shadow-soft">
           <p className="text-lg font-semibold">
             {result.daysUntilStart > 0
-              ? `Trip starts in ${result.daysUntilStart} day${result.daysUntilStart === 1 ? "" : "s"}.`
+              ? `Trip starts in ${result.daysUntilStart} day${result.daysUntilStart === 1 ? "" : "s"} ✈️`
               : "Trip starts today! ✈️"}
           </p>
-          <p className="mt-1 text-sm text-ink/70">
-            First up when you land:
-          </p>
+          <p className="mt-0.5 text-sm text-ink/70">Here&apos;s what kicks it off:</p>
         </div>
       )}
 
@@ -140,67 +189,48 @@ export default async function NowPage() {
         </div>
       )}
 
-      {result.current && <ActivityCard act={result.current} tone="now" />}
-      {result.next && <ActivityCard act={result.next} tone="next" />}
-
-      {nextResv && (
-        <div className="rounded-lg border border-lantern/50 bg-lantern/15 p-5 shadow-soft">
-          <div className="text-xs font-semibold uppercase tracking-wide text-ink/55">
-            Next booking · {nextResv.type}
-          </div>
-          <h2 className="mt-1 font-bold text-ink">{nextResv.title}</h2>
-          <p className="mt-1 text-sm text-ink/70">
-            {new Date(nextResv.startsAt as Date).toLocaleString("en-US", {
-              timeZone: "Asia/Tokyo",
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}{" "}
-            (JST)
-            {nextResv.confirmation ? ` · #${nextResv.confirmation}` : ""}
-          </p>
-          {nextResv.url && (
-            <a
-              href={nextResv.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-block text-sm font-medium text-red hover:underline"
-            >
-              Open booking ↗
-            </a>
-          )}
-        </div>
+      {result.current && result.current.key !== result.next?.key && (
+        <p className="text-sm text-ink/60">
+          <span className="font-medium text-ink/80">Around now:</span>{" "}
+          {result.current.icon} {result.current.title}
+        </p>
       )}
 
-      {result.upcoming.length > 1 && (
+      {result.next && (
+        <NextHero
+          step={result.next}
+          label={result.phase === "before" ? "First up" : "Do this next"}
+        />
+      )}
+
+      {result.laterToday.length > 0 && (
         <section>
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink/55">
-            Then
+            Later today
           </h2>
           <ul className="divide-y divide-ink/10 overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft">
-            {result.upcoming.slice(1).map((a) => (
-              <li key={a.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="w-12 shrink-0 text-xs font-semibold tabular-nums text-ink/45">
-                  {a.time ?? ""}
-                </span>
-                <span className="flex-1 text-sm text-ink">
-                  <span className="font-medium">{a.title}</span>
-                  <span className="text-ink/50">
-                    {" "}
-                    · Day {a.dayNumber}
-                  </span>
-                </span>
-                {a.isSecret && <SecretBadge />}
-              </li>
+            {result.laterToday.map((s) => (
+              <StepRow key={s.key} step={s} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {result.upcoming.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink/55">
+            Coming up
+          </h2>
+          <ul className="divide-y divide-ink/10 overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft">
+            {result.upcoming.map((s) => (
+              <StepRow key={s.key} step={s} />
             ))}
           </ul>
         </section>
       )}
 
       <p className="text-center text-xs text-ink/45">
-        Up next is computed from your itinerary times and today&apos;s date.
+        Built from your itinerary, hotels, travel legs, and bookings.
       </p>
     </div>
   );
