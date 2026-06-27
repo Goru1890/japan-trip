@@ -123,13 +123,6 @@ body::before {
   box-shadow: var(--shadow-soft);
 }
 
-/* Faint travel-pattern wash for headers, hero backdrops, and empty states. */
-.bg-travel-pattern {
-  background-image: url("/assets/images/pattern-japan-travel.png");
-  background-size: 360px;
-  background-repeat: repeat;
-}
-
 /* Respect reduced-motion preferences. */
 @media (prefers-reduced-motion: reduce) {
   html {

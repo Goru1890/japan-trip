@@ -67,10 +67,15 @@ export async function deleteChecklistAction(fd: FormData): Promise<void> {
 export async function setCheckedAction(
   id: number,
   checked: boolean
-): Promise<void> {
+): Promise<{ ok: boolean; error?: string }> {
   await requireSession();
-  await setChecklistChecked(id, checked);
+  try {
+    await setChecklistChecked(id, checked);
+  } catch (e) {
+    return { ok: false, error: message(e) };
+  }
   revalidate();
+  return { ok: true };
 }
 
 // ---- sections ----

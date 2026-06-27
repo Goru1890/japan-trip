@@ -35,7 +35,7 @@ export interface ActivityFormValues {
 }
 
 const inputCls =
-  "w-full rounded-md border border-ink/20 bg-white px-2.5 py-1.5 text-sm text-ink focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30";
+  "w-full rounded-md border border-ink/20 bg-white px-2.5 py-1.5 text-base text-ink sm:text-sm focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30";
 
 export function ActivityForm({
   dayNumber,
@@ -102,78 +102,20 @@ export function ActivityForm({
         </select>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowAdvanced((v) => !v)}
-        className="text-xs font-medium text-ink/60 hover:text-ink"
-      >
-        {showAdvanced ? "− Fewer options" : "+ More options (notes, cost, links, secret)"}
-      </button>
+      <textarea
+        name="description"
+        defaultValue={initial?.description ?? ""}
+        placeholder="Notes / description"
+        rows={2}
+        className={inputCls}
+      />
 
-      <div className={showAdvanced ? "space-y-2.5" : "hidden"}>
-        <textarea
-          name="description"
-          defaultValue={initial?.description ?? ""}
-          placeholder="Notes / description"
-          rows={2}
-          className={inputCls}
-        />
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <input
-          name="cost"
-          defaultValue={initial?.cost ?? ""}
-          placeholder="Cost (¥2,000)"
-          className={inputCls}
-        />
-        <input
-          name="booking"
-          defaultValue={initial?.booking ?? ""}
-          placeholder="Booking note"
-          className={inputCls}
-        />
-        <input
-          name="location"
-          defaultValue={initial?.location ?? ""}
-          placeholder="📍 Map: place name or paste a link"
-          className={inputCls}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <label className="text-xs text-ink/55">
-          🛏️ Linked hotel
-          <select
-            name="stayId"
-            defaultValue={initial?.stayId != null ? String(initial.stayId) : ""}
-            className={inputCls}
-          >
-            <option value="">— none —</option>
-            {stays.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.city} · {s.area}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs text-ink/55">
-          📌 Linked booking
-          <select
-            name="reservationId"
-            defaultValue={
-              initial?.reservationId != null ? String(initial.reservationId) : ""
-            }
-            className={inputCls}
-          >
-            <option value="">— none —</option>
-            {reservations.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.title}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <input
+        name="location"
+        defaultValue={initial?.location ?? ""}
+        placeholder="📍 Map: place name or paste a link"
+        className={inputCls}
+      />
 
       <div className="flex flex-wrap items-center gap-4 text-sm text-ink/80">
         <label className="flex items-center gap-1.5">
@@ -195,6 +137,65 @@ export function ActivityForm({
           🔒 Secret (only you can see it)
         </label>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setShowAdvanced((v) => !v)}
+        className="text-xs font-medium text-ink/70 hover:text-ink"
+      >
+        {showAdvanced ? "− Fewer options" : "+ More options (cost, booking, links)"}
+      </button>
+
+      <div className={showAdvanced ? "space-y-2.5" : "hidden"}>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <input
+            name="cost"
+            defaultValue={initial?.cost ?? ""}
+            placeholder="Cost (¥2,000)"
+            className={inputCls}
+          />
+          <input
+            name="booking"
+            defaultValue={initial?.booking ?? ""}
+            placeholder="Booking note"
+            className={inputCls}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <label className="text-xs text-ink/55">
+            🛏️ Linked hotel
+            <select
+              name="stayId"
+              defaultValue={initial?.stayId != null ? String(initial.stayId) : ""}
+              className={inputCls}
+            >
+              <option value="">— none —</option>
+              {stays.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.city} · {s.area}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-ink/55">
+            📌 Linked booking
+            <select
+              name="reservationId"
+              defaultValue={
+                initial?.reservationId != null ? String(initial.reservationId) : ""
+              }
+              className={inputCls}
+            >
+              <option value="">— none —</option>
+              {reservations.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       {state.error && <p className="text-sm text-red">{state.error}</p>}

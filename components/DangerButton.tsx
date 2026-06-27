@@ -33,9 +33,17 @@ export function DangerButton({
       const fd = new FormData();
       for (const [k, v] of Object.entries(fields)) fd.set(k, String(v));
       startTransition(async () => {
-        await action(fd);
-        if (toast) ui.toast(toast);
-        router.refresh();
+        try {
+          await action(fd);
+          if (toast) ui.toast(toast);
+        } catch (e) {
+          ui.toast(
+            e instanceof Error ? e.message : "Couldn't complete that",
+            "error"
+          );
+        } finally {
+          router.refresh();
+        }
       });
     });
   }

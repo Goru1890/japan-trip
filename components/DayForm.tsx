@@ -16,7 +16,7 @@ export interface DayFormValues {
 }
 
 const inputCls =
-  "w-full rounded-md border border-ink/20 bg-white px-2.5 py-1.5 text-sm text-ink focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30";
+  "w-full rounded-md border border-ink/20 bg-white px-2.5 py-1.5 text-base text-ink sm:text-sm focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30";
 
 export function DayForm({
   initial,

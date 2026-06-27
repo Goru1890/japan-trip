@@ -48,7 +48,7 @@ export function StartDateControl({
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-ink/20 bg-white px-3 py-2 text-sm text-ink shadow-sm focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30"
+        className="rounded-md border border-ink/20 bg-white px-3 py-2 text-base sm:text-sm text-ink shadow-sm focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30"
       />
     </div>
   );

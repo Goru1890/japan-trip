@@ -27,7 +27,7 @@ export function LoginForm({ from }: { from: string }) {
           autoCapitalize="none"
           spellCheck={false}
           placeholder="joaquin or rosalie"
-          className="w-full rounded-md border border-ink/20 bg-white px-3 py-2 text-sm text-ink focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30"
+          className="w-full rounded-md border border-ink/20 bg-white px-3 py-2 text-base sm:text-sm text-ink focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30"
         />
       </div>
 
@@ -44,7 +44,7 @@ export function LoginForm({ from }: { from: string }) {
           type="password"
           autoComplete="current-password"
           placeholder="••••••••"
-          className="w-full rounded-md border border-ink/20 bg-white px-3 py-2 text-sm text-ink focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30"
+          className="w-full rounded-md border border-ink/20 bg-white px-3 py-2 text-base sm:text-sm text-ink focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30"
         />
         <p className="mt-1 text-xs text-ink/55">
           First time? Whatever you type becomes your password.
@@ -52,7 +52,7 @@ export function LoginForm({ from }: { from: string }) {
       </div>
 
       {state.error && (
-        <p className="rounded-md border border-red/40 bg-red/10 px-3 py-2 text-sm text-ink">
+        <p className="rounded-md border border-red/40 bg-red/10 px-3 py-2 text-base sm:text-sm text-ink">
           {state.error}
         </p>
       )}

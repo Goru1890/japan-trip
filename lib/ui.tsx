@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -31,6 +32,8 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const idRef = useRef(0);
+  const lastFocused = useRef<HTMLElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const toast = useCallback((msg: string, type: ToastType = "success") => {
     const id = ++idRef.current;
@@ -41,10 +44,12 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const confirm = useCallback(
-    (msg: string, confirmLabel = "Delete") =>
-      new Promise<boolean>((resolve) =>
+    (msg: string, confirmLabel = "Delete") => {
+      lastFocused.current = document.activeElement as HTMLElement | null;
+      return new Promise<boolean>((resolve) =>
         setConfirmState({ msg, confirmLabel, resolve })
-      ),
+      );
+    },
     []
   );
 
@@ -52,16 +57,49 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
     (v: boolean) => {
       confirmState?.resolve(v);
       setConfirmState(null);
+      lastFocused.current?.focus?.();
     },
     [confirmState]
   );
+
+  // Focus the dialog's confirm button on open; trap Tab; Escape cancels.
+  useEffect(() => {
+    if (!confirmState) return;
+    const node = dialogRef.current;
+    const focusables = node?.querySelectorAll<HTMLElement>("button");
+    focusables?.[focusables.length - 1]?.focus();
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        resolveConfirm(false);
+      } else if (e.key === "Tab" && focusables && focusables.length) {
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [confirmState, resolveConfirm]);
 
   return (
     <UIContext.Provider value={{ toast, confirm }}>
       {children}
 
-      {/* Toasts */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 sm:bottom-6">
+      {/* Toasts — announced to screen readers */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 sm:bottom-6"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
@@ -83,10 +121,16 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
           onClick={() => resolveConfirm(false)}
         >
           <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-msg"
             className="w-full max-w-sm rounded-lg border border-ink/10 bg-paper p-5 shadow-soft"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-sm text-ink">{confirmState.msg}</p>
+            <p id="confirm-msg" className="text-sm text-ink">
+              {confirmState.msg}
+            </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => resolveConfirm(false)}
@@ -95,7 +139,6 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
                 Cancel
               </button>
               <button
-                autoFocus
                 onClick={() => resolveConfirm(true)}
                 className="rounded-md bg-red px-3 py-1.5 text-sm font-medium text-paper hover:bg-red/90"
               >

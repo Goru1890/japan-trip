@@ -105,20 +105,19 @@ export default async function HomePage() {
     countdown = "Trip complete 🎉";
   }
 
-  const hotelsBooked = stayRows.filter(
-    (s) => s.status === "booked" || s.status === "paid"
-  ).length;
-  const hotelsPct = stayRows.length
-    ? Math.round((hotelsBooked / stayRows.length) * 100)
-    : 0;
+  // Hotels measured as booked nights / total trip nights (fixed denominator),
+  // so adding a *tentative* stay never lowers readiness — only booking one raises it.
+  const bookedNights = stayRows
+    .filter((s) => s.status === "booked" || s.status === "paid")
+    .reduce((n, s) => n + stayNights(s), 0);
+  const tripNights = Math.max(totalDays - 1, 1);
+  const hotelsPct = Math.min(100, Math.round((bookedNights / tripNights) * 100));
   const checkDone = checklistRows.filter((c) => c.checked).length;
   const checkPct = checklistRows.length
     ? Math.round((checkDone / checklistRows.length) * 100)
     : 0;
   const bookings = resvRows.length;
-  const readiness = Math.round(
-    (hotelsPct + checkPct + (bookings > 0 ? 100 : 0)) / 3
-  );
+  const readiness = Math.round((hotelsPct + checkPct) / 2);
   const title = settings.title || tripMeta.title;
   const subtitle = settings.subtitle || tripMeta.subtitle;
   const seasonNote = settings.season_note || tripMeta.seasonNote;
@@ -191,8 +190,8 @@ export default async function HomePage() {
         <ul className="mt-4 space-y-2.5">
           <ReadyRow
             icon="🏨"
-            label="Hotels booked"
-            value={`${hotelsBooked}/${stayRows.length}`}
+            label="Hotel nights booked"
+            value={`${bookedNights}/${tripNights}`}
             pct={hotelsPct}
           />
           <ReadyRow
@@ -201,13 +200,10 @@ export default async function HomePage() {
             value={`${checkDone}/${checklistRows.length}`}
             pct={checkPct}
           />
-          <ReadyRow
-            icon="🎫"
-            label="Bookings saved"
-            value={String(bookings)}
-            pct={bookings > 0 ? 100 : 0}
-          />
         </ul>
+        <p className="mt-3 text-sm text-ink/60">
+          🎫 {bookings} booking{bookings === 1 ? "" : "s"} saved
+        </p>
       </section>
 
       {/* Start date */}

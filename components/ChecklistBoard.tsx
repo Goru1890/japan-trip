@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { useAudio } from "@/lib/audio";
+import { useUI } from "@/lib/ui";
 import {
   setCheckedAction,
   deleteChecklistAction,
@@ -43,6 +44,7 @@ export function ChecklistBoard({
   items: ChecklistItem[];
 }) {
   const { play } = useAudio();
+  const { toast } = useUI();
   const [checks, setChecks] = useState<Record<number, boolean>>({});
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [addInSection, setAddInSection] = useState<number | null>(null);
@@ -67,7 +69,13 @@ export function ChecklistBoard({
     const next = !isChecked(it);
     setChecks((c) => ({ ...c, [it.id]: next }));
     if (next) play("complete");
-    startTransition(() => setCheckedAction(it.id, next));
+    startTransition(async () => {
+      const res = await setCheckedAction(it.id, next);
+      if (res && res.ok === false) {
+        setChecks((c) => ({ ...c, [it.id]: !next })); // revert
+        toast(res.error || "Couldn't save that", "error");
+      }
+    });
   }
 
   return (
@@ -197,10 +205,10 @@ export function ChecklistBoard({
                           >
                             {it.label}
                           </span>
-                          <span className="flex shrink-0 items-center gap-2 text-xs font-medium opacity-0 transition-opacity group-hover:opacity-100">
+                          <span className="flex shrink-0 items-center gap-3 text-xs font-medium">
                             <button
                               onClick={() => setEditItemId(it.id)}
-                              className="text-ink/60 hover:underline"
+                              className="px-1 py-1 text-ink/60 hover:underline"
                             >
                               Edit
                             </button>
@@ -210,7 +218,7 @@ export function ChecklistBoard({
                               confirm="Delete this item?"
                               toast="Item deleted"
                               label="Delete"
-                              className="text-red/80 hover:underline"
+                              className="px-1 py-1 text-red/80 hover:underline"
                             />
                           </span>
                         </li>
