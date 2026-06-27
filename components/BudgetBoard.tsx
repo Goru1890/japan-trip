@@ -76,7 +76,7 @@ export function BudgetBoard({
                     <span className="font-semibold text-ink">
                       {formatUsd(line.estimate)}
                     </span>
-                    <span className="text-xs text-ink/45">{pct}%</span>
+                    <span className="text-xs text-ink/60">{pct}%</span>
                   </span>
                 </div>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-ink/10">

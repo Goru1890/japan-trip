@@ -76,6 +76,7 @@ export function ActivityForm({
 
       <input
         name="title"
+        aria-label="Activity title"
         defaultValue={initial?.title ?? ""}
         placeholder="Title (e.g. Lunch at …)"
         autoFocus
@@ -85,12 +86,14 @@ export function ActivityForm({
       <div className="grid grid-cols-2 gap-2">
         <input
           name="time"
+          aria-label="Time"
           defaultValue={initial?.time ?? ""}
           placeholder="Time (09:00 / Morning)"
           className={inputCls}
         />
         <select
           name="category"
+          aria-label="Category"
           defaultValue={initial?.category ?? "city"}
           className={inputCls}
         >
@@ -104,6 +107,7 @@ export function ActivityForm({
 
       <textarea
         name="description"
+        aria-label="Notes"
         defaultValue={initial?.description ?? ""}
         placeholder="Notes / description"
         rows={2}
@@ -112,6 +116,7 @@ export function ActivityForm({
 
       <input
         name="location"
+        aria-label="Map location or link"
         defaultValue={initial?.location ?? ""}
         placeholder="📍 Map: place name or paste a link"
         className={inputCls}
@@ -150,12 +155,14 @@ export function ActivityForm({
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <input
             name="cost"
+            aria-label="Cost"
             defaultValue={initial?.cost ?? ""}
             placeholder="Cost (¥2,000)"
             className={inputCls}
           />
           <input
             name="booking"
+            aria-label="Booking note"
             defaultValue={initial?.booking ?? ""}
             placeholder="Booking note"
             className={inputCls}

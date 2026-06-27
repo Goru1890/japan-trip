@@ -77,7 +77,11 @@ export function ItineraryBoard({
   return (
     <div className="space-y-5">
       {/* Filters */}
-      <div className="sticky top-[53px] z-10 -mx-4 flex flex-wrap items-center gap-2 bg-paper/85 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-[rgba(248,238,220,0.78)] sm:-mx-6 sm:px-6">
+      <div
+        role="group"
+        aria-label="Filter by interest"
+        className="sticky top-[53px] z-10 -mx-4 flex flex-wrap items-center gap-2 bg-paper/85 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-[rgba(248,238,220,0.78)] sm:-mx-6 sm:px-6"
+      >
         {(Object.keys(categoryMeta) as Category[]).map((cat) => {
           const active = filters.has(cat);
           const meta = categoryMeta[cat];
@@ -93,7 +97,7 @@ export function ItineraryBoard({
                   : "border-ink/15 bg-white text-ink/70 hover:border-ink/30",
               ].join(" ")}
             >
-              {meta.emoji} {meta.label}
+              <span aria-hidden>{meta.emoji}</span> {meta.label}
             </button>
           );
         })}
@@ -121,7 +125,7 @@ export function ItineraryBoard({
             ) : (
               <button
                 onClick={() => setInsertAt(day.day)}
-                className="block w-full rounded-md border border-dashed border-ink/15 py-1 text-center text-xs font-medium text-ink/45 hover:border-ink/30 hover:text-ink"
+                className="block w-full rounded-md border border-dashed border-ink/15 py-1 text-center text-xs font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
               >
                 + Insert a day here
               </button>
@@ -228,7 +232,7 @@ export function ItineraryBoard({
                       dim ? "opacity-35" : "opacity-100",
                     ].join(" ")}
                   >
-                    <div className="w-14 shrink-0 pt-0.5 text-xs font-semibold tabular-nums text-ink/45">
+                    <div className="w-14 shrink-0 pt-0.5 text-xs font-semibold tabular-nums text-ink/60">
                       {act.time ?? ""}
                     </div>
                     <div className="min-w-0 flex-1">

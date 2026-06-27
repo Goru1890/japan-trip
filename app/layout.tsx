@@ -43,8 +43,17 @@ export default async function RootLayout({
         <AudioProvider>
           <UIProvider>
             <SakuraFall />
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-ink focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-paper"
+            >
+              Skip to content
+            </a>
             <SiteNav user={session?.name ?? null} title={title} />
-            <main className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6">
+            <main
+              id="main"
+              className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6"
+            >
               {children}
             </main>
             <footer className="relative z-10 hidden border-t border-ink/10 bg-paper/55 py-6 text-center text-xs text-ink/55 backdrop-blur sm:block">

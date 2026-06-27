@@ -87,7 +87,7 @@ function NextHero({ step, label }: { step: Step; label: string }) {
 function StepRow({ step }: { step: Step }) {
   return (
     <li className="flex items-center gap-3 px-4 py-3">
-      <span className="w-16 shrink-0 text-xs font-semibold tabular-nums text-ink/45">
+      <span className="w-16 shrink-0 text-xs font-semibold tabular-nums text-ink/60">
         {step.time ?? (step.kind === "hotel" ? "night" : step.kind === "travel" ? "travel" : "")}
       </span>
       <span className="text-lg" aria-hidden>
@@ -262,7 +262,7 @@ export default async function NowPage() {
         </section>
       )}
 
-      <p className="text-center text-xs text-ink/45">
+      <p className="text-center text-xs text-ink/60">
         Built from your itinerary, hotels, travel legs, and bookings.
       </p>
     </div>

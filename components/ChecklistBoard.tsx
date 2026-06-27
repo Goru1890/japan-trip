@@ -88,7 +88,14 @@ export function ChecklistBoard({
           </span>
           <span className="tabular-nums text-ink/55">{pct}%</span>
         </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10">
+        <div
+          role="progressbar"
+          aria-label="Checklist progress"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10"
+        >
           <div
             className="h-full rounded-full bg-matcha transition-all"
             style={{ width: `${pct}%` }}
@@ -143,7 +150,7 @@ export function ChecklistBoard({
                       <h3 className="text-sm font-semibold uppercase tracking-wide text-ink/55">
                         {section.title}
                       </h3>
-                      <div className="flex items-center gap-1 text-xs text-ink/45">
+                      <div className="flex items-center gap-1 text-xs text-ink/60">
                         <SectionMove id={section.id} dir="up" disabled={idx === 0} />
                         <SectionMove
                           id={section.id}
@@ -199,7 +206,7 @@ export function ChecklistBoard({
                             className={[
                               "flex-1 text-sm",
                               checked
-                                ? "text-ink/40 line-through"
+                                ? "text-ink/55 line-through"
                                 : "text-ink/80",
                             ].join(" ")}
                           >
@@ -225,7 +232,7 @@ export function ChecklistBoard({
                       );
                     })}
                     {secItems.length === 0 && (
-                      <li className="px-1.5 py-1 text-sm text-ink/40">
+                      <li className="px-1.5 py-1 text-sm text-ink/55">
                         No items yet.
                       </li>
                     )}

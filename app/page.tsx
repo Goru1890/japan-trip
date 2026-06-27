@@ -180,7 +180,14 @@ export default async function HomePage() {
           <span className="text-3xl font-bold tabular-nums text-ink">
             {readiness}%
           </span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink/10">
+          <div
+            role="progressbar"
+            aria-label="Trip readiness"
+            aria-valuenow={readiness}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="h-2 flex-1 overflow-hidden rounded-full bg-ink/10"
+          >
             <div
               className="h-full rounded-full bg-matcha transition-all"
               style={{ width: `${readiness}%` }}

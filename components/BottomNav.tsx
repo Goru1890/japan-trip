@@ -28,7 +28,7 @@ export function BottomNav() {
                 aria-current={active ? "page" : undefined}
                 className={[
                   "flex flex-col items-center gap-0.5 px-0.5 py-2 text-[10px] font-medium leading-none transition-colors",
-                  active ? "text-ink" : "text-ink/50",
+                  active ? "text-ink" : "text-ink/65",
                 ].join(" ")}
               >
                 <span
