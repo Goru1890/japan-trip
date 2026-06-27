@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
-import { addDay, updateDay, deleteDay, type DayInput } from "@/lib/db/queries";
+import {
+  addDay,
+  insertDay,
+  updateDay,
+  deleteDay,
+  type DayInput,
+} from "@/lib/db/queries";
 import type { FormResult } from "./activities";
 
 function field(v: FormDataEntryValue | null): string | null {
@@ -40,8 +46,10 @@ export async function addDayAction(
   if (!input.city || !input.title) {
     return { error: "City and title are required." };
   }
+  const pos = Number(fd.get("position"));
   try {
-    await addDay(input);
+    if (Number.isInteger(pos) && pos >= 1) await insertDay(pos, input);
+    else await addDay(input);
   } catch (e) {
     return { error: message(e) };
   }

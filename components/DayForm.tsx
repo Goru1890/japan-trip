@@ -20,9 +20,12 @@ const inputCls =
 
 export function DayForm({
   initial,
+  insertPosition,
   onClose,
 }: {
   initial?: DayFormValues;
+  /** When set (new day), insert at this 1-based position instead of appending. */
+  insertPosition?: number;
   onClose: () => void;
 }) {
   const [state, formAction, pending] = useActionState<FormResult, FormData>(
@@ -46,6 +49,9 @@ export function DayForm({
       className="space-y-2.5 rounded-md border border-ink/15 bg-paper/60 p-3"
     >
       {initial && <input type="hidden" name="id" value={initial.id} />}
+      {insertPosition != null && (
+        <input type="hidden" name="position" value={insertPosition} />
+      )}
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <input

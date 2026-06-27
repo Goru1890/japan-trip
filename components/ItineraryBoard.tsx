@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { categoryMeta, type Category } from "@/lib/trip";
 import { dateForDay } from "@/lib/format";
@@ -60,6 +60,7 @@ export function ItineraryBoard({
   const [editId, setEditId] = useState<number | null>(null);
   const [editDayId, setEditDayId] = useState<number | null>(null);
   const [addingDay, setAddingDay] = useState(false);
+  const [insertAt, setInsertAt] = useState<number | null>(null);
   const filtering = filters.size > 0;
   const lastDay = days.reduce((m, d) => Math.max(m, d.day), 0);
 
@@ -111,10 +112,21 @@ export function ItineraryBoard({
         const stay = stayForDayIn(stays, day.day);
         const dateLabel = dateForDay(startDate, day.day);
         return (
-          <article
-            key={day.id}
-            className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft"
-          >
+          <Fragment key={day.id}>
+            {insertAt === day.day ? (
+              <DayForm
+                insertPosition={day.day}
+                onClose={() => setInsertAt(null)}
+              />
+            ) : (
+              <button
+                onClick={() => setInsertAt(day.day)}
+                className="block w-full rounded-md border border-dashed border-ink/15 py-1 text-center text-xs font-medium text-ink/45 hover:border-ink/30 hover:text-ink"
+              >
+                + Insert a day here
+              </button>
+            )}
+            <article className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft">
             <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-paper/60 px-5 py-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md bg-ink text-paper">
@@ -147,16 +159,14 @@ export function ItineraryBoard({
                 >
                   Edit day
                 </button>
-                {day.day === lastDay && (
-                  <DangerButton
-                    action={deleteDayAction}
-                    fields={{ dayNumber: day.day }}
-                    confirm={`Remove Day ${day.day} and everything on it? This can't be undone.`}
-                    toast="Day removed"
-                    label="Remove"
-                    className="rounded-md border border-red/30 px-2 py-1 text-xs font-medium text-red/80 hover:bg-red/5"
-                  />
-                )}
+                <DangerButton
+                  action={deleteDayAction}
+                  fields={{ dayNumber: day.day }}
+                  confirm={`Remove Day ${day.day} and everything on it? Later days shift up. This can't be undone.`}
+                  toast="Day removed"
+                  label="Remove"
+                  className="rounded-md border border-red/30 px-2 py-1 text-xs font-medium text-red/80 hover:bg-red/5"
+                />
               </div>
             </header>
 
@@ -347,7 +357,8 @@ export function ItineraryBoard({
                 </div>
               </div>
             )}
-          </article>
+            </article>
+          </Fragment>
         );
       })}
 

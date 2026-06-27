@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, or, sql } from "drizzle-orm";
 import { getDb } from "./index";
 import {
   activities,
@@ -292,19 +292,106 @@ export async function updateDay(id: number, input: DayInput): Promise<void> {
     .where(eq(tripDays.id, id));
 }
 
-/** Remove the last day (only), cascading its activities and unlinking bookings. */
+/**
+ * Insert a new day at `position` (1..N+1), shifting every later day — and all
+ * referencing rows (activities, reservations, stay ranges) — up by one.
+ * A stay spanning the insert point extends to cover the new day.
+ */
+export async function insertDay(
+  position: number,
+  input: DayInput
+): Promise<void> {
+  const db = getDb();
+  await db.transaction(async (tx) => {
+    // Shift days >= position up by 1, highest first (keeps day_number unique).
+    const toShift = await tx
+      .select()
+      .from(tripDays)
+      .where(gte(tripDays.dayNumber, position))
+      .orderBy(desc(tripDays.dayNumber));
+    for (const d of toShift) {
+      await tx
+        .update(tripDays)
+        .set({ dayNumber: d.dayNumber + 1 })
+        .where(eq(tripDays.id, d.id));
+    }
+    await tx
+      .update(activities)
+      .set({ dayNumber: sql`${activities.dayNumber} + 1` })
+      .where(gte(activities.dayNumber, position));
+    await tx
+      .update(reservations)
+      .set({ dayNumber: sql`${reservations.dayNumber} + 1` })
+      .where(gte(reservations.dayNumber, position));
+    await tx
+      .update(stays)
+      .set({ fromDay: sql`${stays.fromDay} + 1` })
+      .where(gte(stays.fromDay, position));
+    await tx
+      .update(stays)
+      .set({ toDay: sql`${stays.toDay} + 1` })
+      .where(gte(stays.toDay, position));
+    await tx.insert(tripDays).values({
+      dayNumber: position,
+      city: input.city,
+      title: input.title,
+      summary: input.summary ?? "",
+      transport: input.transport ?? null,
+      restDay: input.restDay ?? false,
+    });
+  });
+}
+
+/**
+ * Delete ANY day: drop its activities, unlink its bookings, shrink/clear stays
+ * that covered it, then renumber every later day + reference down by one.
+ */
 export async function deleteDay(dayNumber: number): Promise<void> {
   const db = getDb();
-  const last = await maxDayNumber();
-  if (dayNumber !== last) {
-    throw new Error("For now you can only remove the last day.");
-  }
-  await db.delete(activities).where(eq(activities.dayNumber, dayNumber));
-  await db
-    .update(reservations)
-    .set({ dayNumber: null })
-    .where(eq(reservations.dayNumber, dayNumber));
-  await db.delete(tripDays).where(eq(tripDays.dayNumber, dayNumber));
+  await db.transaction(async (tx) => {
+    await tx.delete(activities).where(eq(activities.dayNumber, dayNumber));
+    await tx
+      .update(reservations)
+      .set({ dayNumber: null })
+      .where(eq(reservations.dayNumber, dayNumber));
+
+    // Adjust stay ranges to final (post-delete) numbers; drop day-only stays.
+    const allStays = await tx.select().from(stays);
+    for (const s of allStays) {
+      const nf = s.fromDay > dayNumber ? s.fromDay - 1 : s.fromDay;
+      const nt = s.toDay >= dayNumber ? s.toDay - 1 : s.toDay;
+      if (nt < nf) {
+        await tx.delete(stays).where(eq(stays.id, s.id));
+      } else if (nf !== s.fromDay || nt !== s.toDay) {
+        await tx
+          .update(stays)
+          .set({ fromDay: nf, toDay: nt })
+          .where(eq(stays.id, s.id));
+      }
+    }
+
+    await tx
+      .update(activities)
+      .set({ dayNumber: sql`${activities.dayNumber} - 1` })
+      .where(gt(activities.dayNumber, dayNumber));
+    await tx
+      .update(reservations)
+      .set({ dayNumber: sql`${reservations.dayNumber} - 1` })
+      .where(gt(reservations.dayNumber, dayNumber));
+
+    await tx.delete(tripDays).where(eq(tripDays.dayNumber, dayNumber));
+    const toShift = await tx
+      .select()
+      .from(tripDays)
+      .where(gt(tripDays.dayNumber, dayNumber))
+      .orderBy(asc(tripDays.dayNumber));
+    for (const d of toShift) {
+      await tx
+        .update(tripDays)
+        .set({ dayNumber: d.dayNumber - 1 })
+        .where(eq(tripDays.id, d.id));
+    }
+  });
 }
 
 // ---------- stays (lodging) ----------
