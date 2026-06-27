@@ -1,8 +1,10 @@
 // Build external links (Google Maps, hotel search) from plain place strings.
 
-/** Google Maps search link for a place name. */
+/** Maps link for a place name — or the value itself if it's already a URL. */
 export function mapsUrl(query: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  const q = query.trim();
+  if (/^https?:\/\//i.test(q)) return q;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 
 /** Booking.com search link for an area (no dates baked in — pick on arrival). */

@@ -135,7 +135,7 @@ export function ActivityForm({
         <input
           name="location"
           defaultValue={initial?.location ?? ""}
-          placeholder="Map location"
+          placeholder="📍 Map: place name or paste a link"
           className={inputCls}
         />
       </div>

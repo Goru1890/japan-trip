@@ -60,7 +60,8 @@ export function HotelsBoard({
           return (
             <li
               key={stay.id}
-              className="rounded-lg border border-ink/10 bg-white p-4 shadow-soft"
+              id={`stay-${stay.id}`}
+              className="scroll-mt-20 rounded-lg border border-ink/10 bg-white p-4 shadow-soft"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex items-center gap-2.5">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { categoryMeta, type Category } from "@/lib/trip";
 import { dateForDay } from "@/lib/format";
 import { mapsUrl } from "@/lib/links";
@@ -246,14 +247,13 @@ export function ItineraryBoard({
                           </a>
                         )}
                         {linkedStay && (
-                          <a
-                            href={stayMapHref(linkedStay)}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <Link
+                            href={`/hotels#stay-${linkedStay.id}`}
+                            title="See this hotel"
                             className="inline-flex items-center gap-1 rounded border border-sky/40 bg-sky/10 px-1.5 py-0.5 font-medium text-ink hover:bg-sky/20"
                           >
                             🛏️ {linkedStay.area}
-                          </a>
+                          </Link>
                         )}
                         {linkedResv &&
                           (linkedResv.url ? (
