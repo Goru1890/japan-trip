@@ -5,6 +5,7 @@ import {
   getDays,
   getStays,
   getVisibleActivities,
+  getVisibleReservations,
   canManage,
 } from "@/lib/db/queries";
 import { type Category } from "@/lib/trip";
@@ -14,6 +15,7 @@ import {
   type BoardActivity,
   type BoardDay,
 } from "@/components/ItineraryBoard";
+import { type ReservationLite } from "@/components/ActivityForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Itinerary · Japan Trip" };
@@ -22,11 +24,12 @@ export default async function ItineraryPage() {
   const session = await getSession();
   const uid = session?.uid ?? -1;
 
-  const [startDate, dayRows, stayRows, acts] = await Promise.all([
+  const [startDate, dayRows, stayRows, acts, resvRows] = await Promise.all([
     getStartDate(),
     getDays(),
     getStays(),
     getVisibleActivities(uid),
+    getVisibleReservations(uid),
   ]);
 
   const stays: StayView[] = stayRows.map((s) => ({
@@ -37,6 +40,14 @@ export default async function ItineraryPage() {
     toDay: s.toDay,
     note: s.note,
     status: s.status as StayStatus,
+  }));
+
+  const reservations: ReservationLite[] = resvRows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    type: r.type,
+    url: r.url,
+    confirmation: r.confirmation,
   }));
 
   const activitiesByDay: Record<number, BoardActivity[]> = {};
@@ -53,6 +64,8 @@ export default async function ItineraryPage() {
       location: a.location,
       mustDo: a.mustDo,
       isSecret: a.isSecret,
+      stayId: a.stayId,
+      reservationId: a.reservationId,
       canManage: canManage(a, uid),
     });
   }
@@ -93,6 +106,7 @@ export default async function ItineraryPage() {
         startDate={startDate}
         days={boardDays}
         stays={stays}
+        reservations={reservations}
         activitiesByDay={activitiesByDay}
       />
     </div>

@@ -3,11 +3,20 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { categoryMeta, type Category } from "@/lib/trip";
+import type { StayView } from "@/lib/stays";
 import {
   addActivityAction,
   updateActivityAction,
   type FormResult,
 } from "@/app/actions/activities";
+
+export interface ReservationLite {
+  id: number;
+  title: string;
+  type: string;
+  url: string | null;
+  confirmation: string | null;
+}
 
 export interface ActivityFormValues {
   id: number;
@@ -20,6 +29,8 @@ export interface ActivityFormValues {
   location: string | null;
   mustDo: boolean;
   isSecret: boolean;
+  stayId: number | null;
+  reservationId: number | null;
 }
 
 const inputCls =
@@ -29,10 +40,14 @@ export function ActivityForm({
   dayNumber,
   initial,
   onClose,
+  stays,
+  reservations,
 }: {
   dayNumber: number;
   initial?: ActivityFormValues;
   onClose: () => void;
+  stays: StayView[];
+  reservations: ReservationLite[];
 }) {
   const [state, formAction, pending] = useActionState<FormResult, FormData>(
     initial ? updateActivityAction : addActivityAction,
@@ -110,6 +125,41 @@ export function ActivityForm({
           placeholder="Map location"
           className={inputCls}
         />
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="text-xs text-ink/55">
+          🛏️ Linked hotel
+          <select
+            name="stayId"
+            defaultValue={initial?.stayId != null ? String(initial.stayId) : ""}
+            className={inputCls}
+          >
+            <option value="">— none —</option>
+            {stays.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.city} · {s.area}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-ink/55">
+          📌 Linked booking
+          <select
+            name="reservationId"
+            defaultValue={
+              initial?.reservationId != null ? String(initial.reservationId) : ""
+            }
+            className={inputCls}
+          >
+            <option value="">— none —</option>
+            {reservations.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.title}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="flex flex-wrap items-center gap-4 text-sm text-ink/80">

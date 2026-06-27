@@ -20,6 +20,11 @@ function checkbox(v: FormDataEntryValue | null): boolean {
   return v === "on" || v === "true";
 }
 
+function numOrNull(v: FormDataEntryValue | null): number | null {
+  const s = String(v ?? "").trim();
+  return s ? Number(s) : null;
+}
+
 function parse(fd: FormData): ActivityInput {
   return {
     dayNumber: Number(fd.get("dayNumber")),
@@ -32,6 +37,8 @@ function parse(fd: FormData): ActivityInput {
     location: field(fd.get("location")),
     mustDo: checkbox(fd.get("mustDo")),
     isSecret: checkbox(fd.get("isSecret")),
+    stayId: numOrNull(fd.get("stayId")),
+    reservationId: numOrNull(fd.get("reservationId")),
   };
 }
 

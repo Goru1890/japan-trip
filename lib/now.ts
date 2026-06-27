@@ -121,7 +121,9 @@ const TYPE_EMOJI: Record<string, string> = {
 };
 
 function activityAction(a: NowActivity): string {
+  if (a.category === "checkin") return "Check in —";
   if (/airport/i.test(a.location ?? a.title)) return "Head to";
+  if (a.category === "travel") return "Travel —";
   if (a.category === "food") return a.location ? "Eat at" : "Food —";
   return a.location ? "Go to" : "Up next —";
 }

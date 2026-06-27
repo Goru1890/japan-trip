@@ -45,6 +45,11 @@ export const activities = pgTable("activities", {
   mustDo: boolean("must_do").notNull().default(false),
   isSecret: boolean("is_secret").notNull().default(false),
   ownerId: integer("owner_id").references(() => users.id, { onDelete: "set null" }),
+  /** Optional links to a lodging stay and/or a booking. */
+  stayId: integer("stay_id").references(() => stays.id, { onDelete: "set null" }),
+  reservationId: integer("reservation_id").references(() => reservations.id, {
+    onDelete: "set null",
+  }),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

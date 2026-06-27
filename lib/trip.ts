@@ -2,7 +2,13 @@
 // every page renders from it. Dates are computed from a start date you set in
 // the app, so the itinerary stays flexible until booked.
 
-export type Category = "food" | "culture" | "nature" | "city";
+export type Category =
+  | "food"
+  | "culture"
+  | "nature"
+  | "city"
+  | "travel"
+  | "checkin";
 
 export interface Activity {
   /** 24h local time, e.g. "08:30". Optional for flexible items. */
@@ -95,6 +101,20 @@ export const categoryMeta: Record<
     dot: "bg-sakura",
     chip: "bg-sakura/30 text-ink border-sakura/60",
     ring: "ring-sakura",
+  },
+  travel: {
+    label: "Travel",
+    emoji: "🚆",
+    dot: "bg-sky",
+    chip: "bg-sky/25 text-ink border-sky/50",
+    ring: "ring-sky",
+  },
+  checkin: {
+    label: "Check-in",
+    emoji: "🛎️",
+    dot: "bg-ink/60",
+    chip: "bg-ink/10 text-ink border-ink/30",
+    ring: "ring-ink",
   },
 };
 

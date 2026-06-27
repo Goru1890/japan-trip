@@ -40,6 +40,8 @@ export interface ActivityInput {
   location?: string | null;
   mustDo?: boolean;
   isSecret?: boolean;
+  stayId?: number | null;
+  reservationId?: number | null;
 }
 
 export async function getVisibleActivities(uid: number): Promise<ActivityRow[]> {
@@ -79,6 +81,8 @@ export async function addActivity(
     mustDo: input.mustDo ?? false,
     isSecret: input.isSecret ?? false,
     ownerId: uid,
+    stayId: input.stayId ?? null,
+    reservationId: input.reservationId ?? null,
     sortOrder: Number(max ?? -1) + 1,
   });
 }
@@ -113,6 +117,8 @@ export async function updateActivity(
       isSecret: becomingSecret,
       // Marking something secret makes it yours; unmarking keeps current owner.
       ownerId: becomingSecret ? row.ownerId ?? uid : row.ownerId,
+      stayId: input.stayId ?? null,
+      reservationId: input.reservationId ?? null,
     })
     .where(eq(activities.id, id));
 }

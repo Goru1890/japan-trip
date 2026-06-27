@@ -13,7 +13,11 @@ import {
 import { useAudio } from "@/lib/audio";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { MustDoBadge, SecretBadge } from "@/components/Badge";
-import { ActivityForm, type ActivityFormValues } from "@/components/ActivityForm";
+import {
+  ActivityForm,
+  type ActivityFormValues,
+  type ReservationLite,
+} from "@/components/ActivityForm";
 import { DayForm } from "@/components/DayForm";
 import { deleteActivityAction } from "@/app/actions/activities";
 import { deleteDayAction } from "@/app/actions/days";
@@ -37,11 +41,13 @@ export function ItineraryBoard({
   startDate,
   days,
   stays,
+  reservations,
   activitiesByDay,
 }: {
   startDate: string;
   days: BoardDay[];
   stays: StayView[];
+  reservations: ReservationLite[];
   activitiesByDay: Record<number, BoardActivity[]>;
 }) {
   const { play } = useAudio();
@@ -192,12 +198,20 @@ export function ItineraryBoard({
             <ul className="divide-y divide-ink/10 border-t border-ink/10">
               {acts.map((act) => {
                 const dim = filtering && !filters.has(act.category);
+                const linkedStay = act.stayId
+                  ? stays.find((s) => s.id === act.stayId)
+                  : null;
+                const linkedResv = act.reservationId
+                  ? reservations.find((r) => r.id === act.reservationId)
+                  : null;
                 if (editId === act.id) {
                   return (
                     <li key={act.id} className="px-5 py-3">
                       <ActivityForm
                         dayNumber={day.day}
                         initial={act}
+                        stays={stays}
+                        reservations={reservations}
                         onClose={() => setEditId(null)}
                       />
                     </li>
@@ -239,6 +253,31 @@ export function ItineraryBoard({
                             📍 Map ↗
                           </a>
                         )}
+                        {linkedStay && (
+                          <a
+                            href={mapsUrl(stayQuery(linkedStay))}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded border border-sky/40 bg-sky/10 px-1.5 py-0.5 font-medium text-ink hover:bg-sky/20"
+                          >
+                            🛏️ {linkedStay.area}
+                          </a>
+                        )}
+                        {linkedResv &&
+                          (linkedResv.url ? (
+                            <a
+                              href={linkedResv.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded border border-lantern/50 bg-lantern/15 px-1.5 py-0.5 font-medium text-ink hover:bg-lantern/25"
+                            >
+                              📌 {linkedResv.title}
+                            </a>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded border border-lantern/50 bg-lantern/15 px-1.5 py-0.5 font-medium text-ink">
+                              📌 {linkedResv.title}
+                            </span>
+                          ))}
                         {act.canManage && (
                           <>
                             <button
@@ -276,6 +315,8 @@ export function ItineraryBoard({
                 {addOn === day.day ? (
                   <ActivityForm
                     dayNumber={day.day}
+                    stays={stays}
+                    reservations={reservations}
                     onClose={() => setAddOn(null)}
                   />
                 ) : (
