@@ -11,6 +11,9 @@ import {
 import { StartDateControl } from "@/components/StartDateControl";
 import { CategoryDot } from "@/components/CategoryBadge";
 import { Icon, type IconName } from "@/components/Icon";
+import { getStartDate } from "@/lib/db/queries";
+
+export const dynamic = "force-dynamic";
 
 function routeSegments() {
   const segments: { city: string; from: number; to: number }[] = [];
@@ -24,8 +27,10 @@ function routeSegments() {
 
 const quickLinks: { href: string; label: string; desc: string; icon: IconName }[] =
   [
+    { href: "/now", label: "Now", desc: "What's next", icon: "date" },
     { href: "/itinerary", label: "Itinerary", desc: "Day by day", icon: "train" },
     { href: "/hotels", label: "Hotels", desc: "Where you sleep", icon: "hotel" },
+    { href: "/bookings", label: "Bookings", desc: "Reservations", icon: "onsen" },
     {
       href: "/checklist",
       label: "Checklist",
@@ -35,7 +40,8 @@ const quickLinks: { href: string; label: string; desc: string; icon: IconName }[
     { href: "/budget", label: "Budget", desc: "What it costs", icon: "budget" },
   ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const startDate = await getStartDate();
   const segments = routeSegments();
   const cities = new Set(days.map((d) => d.city).filter((c) => c !== "Departure"));
   const nights = stays.reduce((n, s) => n + stayNights(s), 0);
@@ -76,7 +82,7 @@ export default function HomePage() {
       <p className="text-sm text-ink/70">{tripMeta.seasonNote}</p>
 
       {/* Start date */}
-      <StartDateControl totalDays={days.length} />
+      <StartDateControl totalDays={days.length} initial={startDate} />
 
       {/* Stats band */}
       <div className="grid grid-cols-2 divide-x divide-y divide-ink/10 overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft sm:grid-cols-4 sm:divide-y-0">
@@ -91,7 +97,7 @@ export default function HomePage() {
       </div>
 
       {/* Quick links */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {quickLinks.map((q) => (
           <Link
             key={q.href}

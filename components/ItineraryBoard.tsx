@@ -1,0 +1,272 @@
+"use client";
+
+import { useState } from "react";
+import {
+  categoryMeta,
+  type Category,
+  stayForDay,
+  stayNights,
+} from "@/lib/trip";
+import { dateForDay } from "@/lib/format";
+import { mapsUrl, bookingUrl } from "@/lib/links";
+import { useAudio } from "@/lib/audio";
+import { CategoryBadge } from "@/components/CategoryBadge";
+import { MustDoBadge, SecretBadge } from "@/components/Badge";
+import { ActivityForm, type ActivityFormValues } from "@/components/ActivityForm";
+import { deleteActivityAction } from "@/app/actions/activities";
+
+export interface BoardActivity extends ActivityFormValues {
+  dayNumber: number;
+  canManage: boolean;
+}
+
+export interface BoardDay {
+  day: number;
+  city: string;
+  title: string;
+  summary: string;
+  transport?: string;
+  restDay?: boolean;
+}
+
+export function ItineraryBoard({
+  startDate,
+  days,
+  activitiesByDay,
+}: {
+  startDate: string;
+  days: BoardDay[];
+  activitiesByDay: Record<number, BoardActivity[]>;
+}) {
+  const { play } = useAudio();
+  const [filters, setFilters] = useState<Set<Category>>(new Set());
+  const [addOn, setAddOn] = useState<number | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const filtering = filters.size > 0;
+
+  function toggle(cat: Category) {
+    play("tap");
+    setFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Filters */}
+      <div className="sticky top-[53px] z-10 -mx-4 flex flex-wrap items-center gap-2 bg-paper/85 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-[rgba(248,238,220,0.78)] sm:-mx-6 sm:px-6">
+        {(Object.keys(categoryMeta) as Category[]).map((cat) => {
+          const active = filters.has(cat);
+          const meta = categoryMeta[cat];
+          return (
+            <button
+              key={cat}
+              onClick={() => toggle(cat)}
+              aria-pressed={active}
+              className={[
+                "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                active
+                  ? `${meta.chip} ring-2 ${meta.ring}`
+                  : "border-ink/15 bg-white text-ink/70 hover:border-ink/30",
+              ].join(" ")}
+            >
+              {meta.emoji} {meta.label}
+            </button>
+          );
+        })}
+        {filtering && (
+          <button
+            onClick={() => setFilters(new Set())}
+            className="rounded-md px-3 py-1.5 text-xs font-medium text-ink/55 hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {days.map((day) => {
+        const acts = activitiesByDay[day.day] ?? [];
+        const stay = stayForDay(day.day);
+        const dateLabel = dateForDay(startDate, day.day);
+        return (
+          <article
+            key={day.day}
+            className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft"
+          >
+            <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-paper/60 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md bg-ink text-paper">
+                  <span className="text-[9px] uppercase leading-none opacity-70">
+                    Day
+                  </span>
+                  <span className="text-base font-bold leading-none">{day.day}</span>
+                </span>
+                <div>
+                  <h3 className="font-semibold leading-tight text-ink">
+                    {day.title}
+                  </h3>
+                  <p className="text-sm text-ink/55">
+                    {day.city}
+                    {dateLabel ? ` · ${dateLabel}` : ""}
+                  </p>
+                </div>
+              </div>
+              {day.restDay && (
+                <span className="rounded-md border border-matcha/50 bg-matcha/20 px-2.5 py-0.5 text-xs font-medium text-ink">
+                  relaxed day
+                </span>
+              )}
+            </header>
+
+            <div className="space-y-1 px-5 py-4">
+              <p className="text-sm text-ink/70">{day.summary}</p>
+              {day.transport && (
+                <p className="flex items-start gap-1.5 pt-1 text-sm text-ink/60">
+                  <span aria-hidden>🚆</span>
+                  <span>{day.transport}</span>
+                </p>
+              )}
+            </div>
+
+            <ul className="divide-y divide-ink/10 border-t border-ink/10">
+              {acts.map((act) => {
+                const dim = filtering && !filters.has(act.category);
+                if (editId === act.id) {
+                  return (
+                    <li key={act.id} className="px-5 py-3">
+                      <ActivityForm
+                        dayNumber={day.day}
+                        initial={act}
+                        onClose={() => setEditId(null)}
+                      />
+                    </li>
+                  );
+                }
+                return (
+                  <li
+                    key={act.id}
+                    className={[
+                      "flex gap-3 px-5 py-3 transition-opacity",
+                      dim ? "opacity-35" : "opacity-100",
+                    ].join(" ")}
+                  >
+                    <div className="w-14 shrink-0 pt-0.5 text-xs font-semibold tabular-nums text-ink/45">
+                      {act.time ?? ""}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-ink">{act.title}</span>
+                        <CategoryBadge category={act.category} size="sm" />
+                        {act.mustDo && <MustDoBadge />}
+                        {act.isSecret && <SecretBadge />}
+                      </div>
+                      {act.description && (
+                        <p className="mt-0.5 text-sm text-ink/70">
+                          {act.description}
+                        </p>
+                      )}
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/55">
+                        {act.cost && <span>💴 {act.cost}</span>}
+                        {act.booking && <span>📌 {act.booking}</span>}
+                        {act.location && (
+                          <a
+                            href={mapsUrl(act.location)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-red hover:underline"
+                          >
+                            📍 Map ↗
+                          </a>
+                        )}
+                        {act.canManage && (
+                          <>
+                            <button
+                              onClick={() => setEditId(act.id)}
+                              className="font-medium text-ink/70 hover:underline"
+                            >
+                              Edit
+                            </button>
+                            <form
+                              action={deleteActivityAction}
+                              onSubmit={(e) => {
+                                if (!confirm("Delete this activity?"))
+                                  e.preventDefault();
+                              }}
+                              className="inline"
+                            >
+                              <input type="hidden" name="id" value={act.id} />
+                              <button
+                                type="submit"
+                                className="font-medium text-red/80 hover:underline"
+                              >
+                                Delete
+                              </button>
+                            </form>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+
+              {/* Add activity */}
+              <li className="px-5 py-3">
+                {addOn === day.day ? (
+                  <ActivityForm
+                    dayNumber={day.day}
+                    onClose={() => setAddOn(null)}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setAddOn(day.day)}
+                    className="text-sm font-medium text-red hover:underline"
+                  >
+                    + Add activity
+                  </button>
+                )}
+              </li>
+            </ul>
+
+            {stay && (
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 bg-sky/10 px-5 py-3">
+                <div className="text-sm text-ink">
+                  <span className="mr-1" aria-hidden>
+                    🛏️
+                  </span>
+                  <span className="font-medium">Tonight: {stay.area}</span>
+                  <span className="text-ink/55">
+                    {" "}
+                    · night {day.day - stay.fromDay + 1} of {stayNights(stay)} in{" "}
+                    {stay.city}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs font-medium">
+                  <a
+                    href={bookingUrl(stay.bookingQuery)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-red hover:underline"
+                  >
+                    🏨 Hotels ↗
+                  </a>
+                  <a
+                    href={mapsUrl(stay.mapsQuery)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-red hover:underline"
+                  >
+                    📍 Area ↗
+                  </a>
+                </div>
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  );
+}

@@ -1,31 +1,54 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
-import { days, categoryMeta, type Category } from "@/lib/trip";
-import { dateForDay } from "@/lib/format";
-import { useTripState } from "@/lib/state";
-import { useAudio } from "@/lib/audio";
-import { DayCard } from "@/components/DayCard";
+import { getSession } from "@/lib/auth";
+import { getStartDate, getVisibleActivities, canManage } from "@/lib/db/queries";
+import { days as dayScaffold, type Category } from "@/lib/trip";
+import {
+  ItineraryBoard,
+  type BoardActivity,
+  type BoardDay,
+} from "@/components/ItineraryBoard";
 
-export default function ItineraryPage() {
-  const { startDate, loaded } = useTripState();
-  const { play } = useAudio();
-  const [filters, setFilters] = useState<Set<Category>>(new Set());
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Itinerary · Japan Trip" };
 
-  function toggle(cat: Category) {
-    play("tap");
-    setFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
+export default async function ItineraryPage() {
+  const session = await getSession();
+  const uid = session?.uid ?? -1;
+
+  const [startDate, acts] = await Promise.all([
+    getStartDate(),
+    getVisibleActivities(uid),
+  ]);
+
+  const activitiesByDay: Record<number, BoardActivity[]> = {};
+  for (const a of acts) {
+    (activitiesByDay[a.dayNumber] ??= []).push({
+      id: a.id,
+      dayNumber: a.dayNumber,
+      time: a.time,
+      title: a.title,
+      description: a.description,
+      category: a.category as Category,
+      cost: a.cost,
+      booking: a.booking,
+      location: a.location,
+      mustDo: a.mustDo,
+      isSecret: a.isSecret,
+      canManage: canManage(a, uid),
     });
   }
 
+  const boardDays: BoardDay[] = dayScaffold.map((d) => ({
+    day: d.day,
+    city: d.city,
+    title: d.title,
+    summary: d.summary,
+    transport: d.transport,
+    restDay: d.restDay,
+  }));
+
   return (
     <div className="space-y-5">
-      {/* Banner */}
       <section className="relative h-36 overflow-hidden rounded-lg shadow-soft sm:h-44">
         <Image
           src="/assets/images/card-tokyo-itinerary.png"
@@ -41,53 +64,16 @@ export default function ItineraryPage() {
             Day by day
           </h1>
           <p className="text-sm text-paper/90">
-            Tap an interest to highlight matching stops · dates follow your start
-            date
+            Add, edit, or mark stops secret · tap an interest to filter
           </p>
         </div>
       </section>
 
-      {/* Filter chips */}
-      <div className="sticky top-[53px] z-10 -mx-4 flex flex-wrap items-center gap-2 bg-paper/85 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-[rgba(248,238,220,0.78)] sm:-mx-6 sm:px-6">
-        {(Object.keys(categoryMeta) as Category[]).map((cat) => {
-          const active = filters.has(cat);
-          const meta = categoryMeta[cat];
-          return (
-            <button
-              key={cat}
-              onClick={() => toggle(cat)}
-              aria-pressed={active}
-              className={[
-                "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-                active
-                  ? `${meta.chip} ring-2 ${meta.ring}`
-                  : "border-ink/15 bg-white text-ink/70 hover:border-ink/30",
-              ].join(" ")}
-            >
-              {meta.emoji} {meta.label}
-            </button>
-          );
-        })}
-        {filters.size > 0 && (
-          <button
-            onClick={() => setFilters(new Set())}
-            className="rounded-md px-3 py-1.5 text-xs font-medium text-ink/55 underline-offset-2 hover:underline"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      <div className="space-y-5">
-        {days.map((day) => (
-          <DayCard
-            key={day.day}
-            day={day}
-            dateLabel={loaded ? dateForDay(startDate, day.day) : null}
-            activeFilters={filters}
-          />
-        ))}
-      </div>
+      <ItineraryBoard
+        startDate={startDate}
+        days={boardDays}
+        activitiesByDay={activitiesByDay}
+      />
     </div>
   );
 }
