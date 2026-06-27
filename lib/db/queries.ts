@@ -1,8 +1,8 @@
 import "server-only";
 import { asc, eq, or, sql } from "drizzle-orm";
 import { getDb } from "./index";
-import { activities, reservations, settings } from "./schema";
-import type { ActivityRow, ReservationRow } from "./schema";
+import { activities, reservations, settings, tripDays } from "./schema";
+import type { ActivityRow, ReservationRow, TripDayRow } from "./schema";
 import { tripMeta } from "@/lib/trip";
 
 // ---- visibility & permission rules ----
@@ -218,6 +218,70 @@ export async function deleteReservation(
   if (!row) return;
   if (!canManage(row, uid)) throw new Error("You can't delete this reservation");
   await db.delete(reservations).where(eq(reservations.id, id));
+}
+
+// ---------- days (the editable scaffold) ----------
+
+export interface DayInput {
+  city: string;
+  title: string;
+  summary?: string;
+  transport?: string | null;
+  restDay?: boolean;
+}
+
+export async function getDays(): Promise<TripDayRow[]> {
+  const db = getDb();
+  return db.select().from(tripDays).orderBy(asc(tripDays.dayNumber));
+}
+
+async function maxDayNumber(): Promise<number> {
+  const db = getDb();
+  const [{ max }] = await db
+    .select({ max: sql<number>`coalesce(max(${tripDays.dayNumber}), 0)` })
+    .from(tripDays);
+  return Number(max ?? 0);
+}
+
+export async function addDay(input: DayInput): Promise<void> {
+  const db = getDb();
+  await db.insert(tripDays).values({
+    dayNumber: (await maxDayNumber()) + 1,
+    city: input.city,
+    title: input.title,
+    summary: input.summary ?? "",
+    transport: input.transport ?? null,
+    restDay: input.restDay ?? false,
+  });
+}
+
+export async function updateDay(id: number, input: DayInput): Promise<void> {
+  const db = getDb();
+  await db
+    .update(tripDays)
+    .set({
+      city: input.city,
+      title: input.title,
+      summary: input.summary ?? "",
+      transport: input.transport ?? null,
+      restDay: input.restDay ?? false,
+    })
+    .where(eq(tripDays.id, id));
+}
+
+/** Remove the last day (only), cascading its activities and unlinking bookings. */
+export async function deleteDay(dayNumber: number): Promise<void> {
+  const db = getDb();
+  const last = await maxDayNumber();
+  if (dayNumber !== last) {
+    throw new Error("For now you can only remove the last day.");
+  }
+  await db.delete(activities).where(eq(activities.dayNumber, dayNumber));
+  await db
+    .update(reservations)
+    .set({ dayNumber: null })
+    .where(eq(reservations.dayNumber, dayNumber));
+  await db.delete(tripDays).where(eq(tripDays.dayNumber, dayNumber));
 }
 
 // ---------- settings ----------

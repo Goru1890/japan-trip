@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  days,
   tripMeta,
   categoryMeta,
   type Category,
@@ -11,16 +10,18 @@ import {
 import { StartDateControl } from "@/components/StartDateControl";
 import { CategoryDot } from "@/components/CategoryBadge";
 import { Icon, type IconName } from "@/components/Icon";
-import { getStartDate } from "@/lib/db/queries";
+import { getStartDate, getDays } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
-function routeSegments() {
+type RouteDay = { dayNumber: number; city: string };
+
+function routeSegments(days: RouteDay[]) {
   const segments: { city: string; from: number; to: number }[] = [];
   for (const d of days) {
     const last = segments[segments.length - 1];
-    if (last && last.city === d.city) last.to = d.day;
-    else segments.push({ city: d.city, from: d.day, to: d.day });
+    if (last && last.city === d.city) last.to = d.dayNumber;
+    else segments.push({ city: d.city, from: d.dayNumber, to: d.dayNumber });
   }
   return segments;
 }
@@ -41,13 +42,15 @@ const quickLinks: { href: string; label: string; desc: string; icon: IconName }[
   ];
 
 export default async function HomePage() {
-  const startDate = await getStartDate();
-  const segments = routeSegments();
-  const cities = new Set(days.map((d) => d.city).filter((c) => c !== "Departure"));
+  const [startDate, dayRows] = await Promise.all([getStartDate(), getDays()]);
+  const segments = routeSegments(dayRows);
+  const cities = new Set(
+    dayRows.map((d) => d.city).filter((c) => c !== "Departure")
+  );
   const nights = stays.reduce((n, s) => n + stayNights(s), 0);
 
   const stats = [
-    { label: "Days", value: days.length },
+    { label: "Days", value: dayRows.length },
     { label: "Stops", value: cities.size },
     { label: "Nights", value: nights },
     { label: "Interests", value: Object.keys(categoryMeta).length },
@@ -82,7 +85,7 @@ export default async function HomePage() {
       <p className="text-sm text-ink/70">{tripMeta.seasonNote}</p>
 
       {/* Start date */}
-      <StartDateControl totalDays={days.length} initial={startDate} />
+      <StartDateControl totalDays={dayRows.length} initial={startDate} />
 
       {/* Stats band */}
       <div className="grid grid-cols-2 divide-x divide-y divide-ink/10 overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft sm:grid-cols-4 sm:divide-y-0">

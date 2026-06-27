@@ -1,7 +1,12 @@
 import Image from "next/image";
 import { getSession } from "@/lib/auth";
-import { getStartDate, getVisibleActivities, canManage } from "@/lib/db/queries";
-import { days as dayScaffold, type Category } from "@/lib/trip";
+import {
+  getStartDate,
+  getDays,
+  getVisibleActivities,
+  canManage,
+} from "@/lib/db/queries";
+import { type Category } from "@/lib/trip";
 import {
   ItineraryBoard,
   type BoardActivity,
@@ -15,8 +20,9 @@ export default async function ItineraryPage() {
   const session = await getSession();
   const uid = session?.uid ?? -1;
 
-  const [startDate, acts] = await Promise.all([
+  const [startDate, dayRows, acts] = await Promise.all([
     getStartDate(),
+    getDays(),
     getVisibleActivities(uid),
   ]);
 
@@ -38,8 +44,9 @@ export default async function ItineraryPage() {
     });
   }
 
-  const boardDays: BoardDay[] = dayScaffold.map((d) => ({
-    day: d.day,
+  const boardDays: BoardDay[] = dayRows.map((d) => ({
+    id: d.id,
+    day: d.dayNumber,
     city: d.city,
     title: d.title,
     summary: d.summary,

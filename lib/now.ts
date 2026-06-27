@@ -1,15 +1,20 @@
-import {
-  days,
-  stayForDay,
-  categoryMeta,
-  type Category,
-} from "./trip";
+import { stayForDay, categoryMeta, type Category } from "./trip";
 import { mapsUrl, bookingUrl } from "./links";
 
 // Pure helpers for the "what now / what next" view. Trip time is reckoned in
-// Japan local time (Asia/Tokyo). The view merges four kinds of "steps":
+// Japan local time (Asia/Tokyo). The view merges four kinds of "steps" —
 // travel legs, activities, hotel check-ins, and real bookings — into one
 // time-ordered feed so the app can always say "here's your next move".
+
+/** Minimal day scaffold the engine needs (matches the DB day rows). */
+export interface DayMeta {
+  dayNumber: number;
+  city: string;
+  title: string;
+  summary: string;
+  transport: string | null;
+  restDay: boolean;
+}
 
 export interface NowActivity {
   id: number;
@@ -42,6 +47,7 @@ export interface Step {
   key: string;
   kind: StepKind;
   dayNumber: number;
+  city: string;
   minutes: number; // for ordering within a day
   time: string | null; // display time, if any
   icon: string;
@@ -105,10 +111,6 @@ export function daysBetween(startIso: string, endIso: string): number {
   return Math.round((toUtc(endIso) - toUtc(startIso)) / 86_400_000);
 }
 
-const TOTAL_DAYS = days.length;
-const LAST_DAY = Math.max(...days.map((d) => d.day));
-const cityForDay = (n: number) => days.find((d) => d.day === n)?.city ?? "";
-
 const TYPE_EMOJI: Record<string, string> = {
   hotel: "🏨",
   restaurant: "🍽️",
@@ -126,37 +128,43 @@ function activityAction(a: NowActivity): string {
 /** Build the full, time-ordered list of steps across the whole trip. */
 export function buildSteps(
   startIso: string,
+  dayList: DayMeta[],
   activities: NowActivity[],
   reservations: NowReservation[]
 ): Step[] {
   const steps: Step[] = [];
+  const lastDay = dayList.reduce((m, d) => Math.max(m, d.dayNumber), 0);
+  const cityOf = (n: number) =>
+    dayList.find((d) => d.dayNumber === n)?.city ?? "";
 
-  for (const d of days) {
-    const stay = stayForDay(d.day);
+  for (const d of dayList) {
+    const stay = stayForDay(d.dayNumber);
 
-    // 1) Travel leg (transfer days / arrival / departure) — start of day.
+    // 1) Travel leg — start of day.
     if (d.transport) {
       const isAirport = /airport|kix|narita|haneda|depart/i.test(d.transport);
-      const arriving = stay && stay.fromDay === d.day;
+      const arriving = stay && stay.fromDay === d.dayNumber;
       steps.push({
-        key: `travel-${d.day}`,
+        key: `travel-${d.dayNumber}`,
         kind: "travel",
-        dayNumber: d.day,
+        dayNumber: d.dayNumber,
+        city: d.city,
         minutes: 5,
         time: null,
-        icon: d.day === LAST_DAY && isAirport ? "✈️" : "🚆",
-        action: d.day === LAST_DAY ? "Head out —" : "Travel —",
+        icon: d.dayNumber === lastDay && isAirport ? "✈️" : "🚆",
+        action: d.dayNumber === lastDay ? "Head out —" : "Travel —",
         title: d.transport,
         mapsUrl: arriving ? mapsUrl(stay!.mapsQuery) : undefined,
       });
     }
 
-    // 2) Activities (by their time).
-    for (const a of activities.filter((x) => x.dayNumber === d.day)) {
+    // 2) Activities (by time).
+    for (const a of activities.filter((x) => x.dayNumber === d.dayNumber)) {
       steps.push({
         key: `act-${a.id}`,
         kind: "activity",
-        dayNumber: d.day,
+        dayNumber: d.dayNumber,
+        city: d.city,
         minutes: timeToMinutes(a.time) ?? 12 * 60,
         time: a.time,
         icon: categoryMeta[a.category].emoji,
@@ -171,11 +179,12 @@ export function buildSteps(
 
     // 3) Hotel for the night — end of day.
     if (stay) {
-      const arrival = stay.fromDay === d.day;
+      const arrival = stay.fromDay === d.dayNumber;
       steps.push({
-        key: `hotel-${d.day}`,
+        key: `hotel-${d.dayNumber}`,
         kind: "hotel",
-        dayNumber: d.day,
+        dayNumber: d.dayNumber,
+        city: d.city,
         minutes: 22 * 60,
         time: null,
         icon: "🛏️",
@@ -188,7 +197,7 @@ export function buildSteps(
     }
   }
 
-  // 4) Real bookings, placed at their actual time.
+  // 4) Real bookings at their actual time.
   for (const r of reservations) {
     if (!r.startsAt) continue;
     const { dateIso, minutes } = tokyoNow(r.startsAt);
@@ -197,6 +206,7 @@ export function buildSteps(
       key: `resv-${r.id}`,
       kind: "booking",
       dayNumber,
+      city: cityOf(dayNumber),
       minutes,
       time: minutesToLabel(minutes),
       icon: TYPE_EMOJI[r.type] ?? "📌",
@@ -230,16 +240,20 @@ export interface NextSteps {
 
 export function computeNextSteps(
   startIso: string,
+  dayList: DayMeta[],
   activities: NowActivity[],
   reservations: NowReservation[],
   now: Date
 ): NextSteps {
-  const steps = buildSteps(startIso, activities, reservations);
+  const steps = buildSteps(startIso, dayList, activities, reservations);
+  const lastDay = dayList.reduce((m, d) => Math.max(m, d.dayNumber), 0);
+  const totalDays = dayList.length;
+
   const { dateIso, minutes } = tokyoNow(now);
   const dayIndex = daysBetween(startIso, dateIso) + 1;
   const daysUntilStart = daysBetween(dateIso, startIso);
   const phase: NowPhase =
-    dayIndex < 1 ? "before" : dayIndex > LAST_DAY ? "after" : "during";
+    dayIndex < 1 ? "before" : dayIndex > lastDay ? "after" : "during";
 
   const pos = (s: Step) => s.dayNumber * 10_000 + s.minutes;
   const nowPos = dayIndex * 10_000 + minutes;
@@ -248,7 +262,7 @@ export function computeNextSteps(
     return {
       phase,
       dayIndex,
-      totalDays: TOTAL_DAYS,
+      totalDays,
       daysUntilStart,
       current: null,
       next: null,
@@ -258,7 +272,7 @@ export function computeNextSteps(
   }
 
   let nextIdx = phase === "before" ? 0 : steps.findIndex((s) => pos(s) >= nowPos);
-  if (nextIdx < 0) nextIdx = steps.length; // nothing left today/onward
+  if (nextIdx < 0) nextIdx = steps.length;
 
   const next = steps[nextIdx] ?? null;
   const current =
@@ -269,7 +283,9 @@ export function computeNextSteps(
       : null;
 
   const rest = next ? steps.slice(nextIdx + 1) : [];
-  const laterToday = next ? rest.filter((s) => s.dayNumber === next.dayNumber) : [];
+  const laterToday = next
+    ? rest.filter((s) => s.dayNumber === next.dayNumber)
+    : [];
   const upcoming = next
     ? rest.filter((s) => s.dayNumber > next.dayNumber).slice(0, 5)
     : [];
@@ -277,7 +293,7 @@ export function computeNextSteps(
   return {
     phase,
     dayIndex,
-    totalDays: TOTAL_DAYS,
+    totalDays,
     daysUntilStart,
     current,
     next,
@@ -285,5 +301,3 @@ export function computeNextSteps(
     upcoming,
   };
 }
-
-export { cityForDay };

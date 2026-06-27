@@ -2,13 +2,14 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import {
   getStartDate,
+  getDays,
   getVisibleActivities,
   getVisibleReservations,
 } from "@/lib/db/queries";
 import { type Category } from "@/lib/trip";
 import {
   computeNextSteps,
-  cityForDay,
+  type DayMeta,
   type NowActivity,
   type NowReservation,
   type Step,
@@ -68,7 +69,7 @@ function NextHero({ step, label }: { step: Step; label: string }) {
             )}
           </h2>
           <p className="mt-0.5 text-sm text-ink/55">
-            Day {step.dayNumber} · {cityForDay(step.dayNumber)}
+            Day {step.dayNumber} · {step.city}
             {step.time ? ` · ${step.time}` : ""}
           </p>
           {step.detail && (
@@ -117,11 +118,21 @@ export default async function NowPage() {
   const session = await getSession();
   const uid = session?.uid ?? -1;
 
-  const [startDate, acts, resvs] = await Promise.all([
+  const [startDate, dayRows, acts, resvs] = await Promise.all([
     getStartDate(),
+    getDays(),
     getVisibleActivities(uid),
     getVisibleReservations(uid),
   ]);
+
+  const dayMetas: DayMeta[] = dayRows.map((d) => ({
+    dayNumber: d.dayNumber,
+    city: d.city,
+    title: d.title,
+    summary: d.summary,
+    transport: d.transport,
+    restDay: d.restDay,
+  }));
 
   const nowActs: NowActivity[] = acts.map((a) => ({
     id: a.id,
@@ -148,7 +159,13 @@ export default async function NowPage() {
     isSecret: r.isSecret,
   }));
 
-  const result = computeNextSteps(startDate, nowActs, nowResvs, new Date());
+  const result = computeNextSteps(
+    startDate,
+    dayMetas,
+    nowActs,
+    nowResvs,
+    new Date()
+  );
 
   return (
     <div className="space-y-5">

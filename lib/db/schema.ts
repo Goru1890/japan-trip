@@ -18,6 +18,17 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// The day scaffold — editable so the trip can be any length.
+export const tripDays = pgTable("days", {
+  id: serial("id").primaryKey(),
+  dayNumber: integer("day_number").notNull().unique(),
+  city: text("city").notNull(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull().default(""),
+  transport: text("transport"),
+  restDay: boolean("rest_day").notNull().default(false),
+});
+
 // Itinerary activities live here so both users can add/edit them.
 // owner_id null = shared/seed activity (either user may edit).
 // is_secret true = visible & editable only by owner_id.
@@ -65,6 +76,7 @@ export const settings = pgTable("settings", {
   value: text("value").notNull(),
 });
 
+export type TripDayRow = typeof tripDays.$inferSelect;
 export type ActivityRow = typeof activities.$inferSelect;
 export type ReservationRow = typeof reservations.$inferSelect;
 export type UserRow = typeof users.$inferSelect;

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { getDb } from "../lib/db";
-import { users, settings, activities } from "../lib/db/schema";
+import { users, settings, activities, tripDays } from "../lib/db/schema";
 import { days, tripMeta } from "../lib/trip";
 
 async function main() {
@@ -22,6 +22,27 @@ async function main() {
     .values({ key: "start_date", value: tripMeta.defaultStartDate })
     .onConflictDoNothing({ target: settings.key });
   console.log("✓ start_date setting ensured");
+
+  // Seed the day scaffold only if empty (idempotent).
+  const existingDays = await db
+    .select({ id: tripDays.id })
+    .from(tripDays)
+    .limit(1);
+  if (existingDays.length === 0) {
+    await db.insert(tripDays).values(
+      days.map((d) => ({
+        dayNumber: d.day,
+        city: d.city,
+        title: d.title,
+        summary: d.summary,
+        transport: d.transport ?? null,
+        restDay: d.restDay ?? false,
+      }))
+    );
+    console.log(`✓ seeded ${days.length} days`);
+  } else {
+    console.log("• days already present — skipped");
+  }
 
   // Seed activities only if the table is empty (idempotent).
   const existing = await db.select({ id: activities.id }).from(activities).limit(1);

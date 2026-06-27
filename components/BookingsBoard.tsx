@@ -5,9 +5,9 @@ import { SecretBadge } from "@/components/Badge";
 import {
   ReservationForm,
   type ReservationFormValues,
+  type DayOption,
 } from "@/components/ReservationForm";
 import { deleteReservationAction } from "@/app/actions/reservations";
-import { days } from "@/lib/trip";
 
 export interface BoardReservation extends ReservationFormValues {
   startsAtLabel: string | null;
@@ -22,21 +22,22 @@ const TYPE_EMOJI: Record<string, string> = {
   other: "📌",
 };
 
-const cityForDay = (n: number | null) =>
-  n == null ? null : days.find((d) => d.day === n)?.city ?? null;
-
 export function BookingsBoard({
   reservations,
+  days,
 }: {
   reservations: BoardReservation[];
+  days: DayOption[];
 }) {
   const [adding, setAdding] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+  const cityForDay = (n: number | null) =>
+    n == null ? null : days.find((d) => d.dayNumber === n)?.city ?? null;
 
   return (
     <div className="space-y-4">
       {adding ? (
-        <ReservationForm onClose={() => setAdding(false)} />
+        <ReservationForm days={days} onClose={() => setAdding(false)} />
       ) : (
         <button
           onClick={() => setAdding(true)}
@@ -58,7 +59,11 @@ export function BookingsBoard({
           if (editId === r.id) {
             return (
               <li key={r.id}>
-                <ReservationForm initial={r} onClose={() => setEditId(null)} />
+                <ReservationForm
+                  days={days}
+                  initial={r}
+                  onClose={() => setEditId(null)}
+                />
               </li>
             );
           }

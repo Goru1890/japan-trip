@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth";
-import { getVisibleReservations, canManage } from "@/lib/db/queries";
+import { getVisibleReservations, getDays, canManage } from "@/lib/db/queries";
 import { toJstInputValue, formatJst } from "@/lib/format";
 import { Icon } from "@/components/Icon";
 import { BookingsBoard, type BoardReservation } from "@/components/BookingsBoard";
@@ -10,7 +10,11 @@ export const metadata = { title: "Bookings · Japan Trip" };
 export default async function BookingsPage() {
   const session = await getSession();
   const uid = session?.uid ?? -1;
-  const rows = await getVisibleReservations(uid);
+  const [rows, dayRows] = await Promise.all([
+    getVisibleReservations(uid),
+    getDays(),
+  ]);
+  const dayOptions = dayRows.map((d) => ({ dayNumber: d.dayNumber, city: d.city }));
 
   const reservations: BoardReservation[] = rows.map((r) => {
     const at = r.startsAt ? new Date(r.startsAt) : null;
@@ -42,7 +46,7 @@ export default async function BookingsPage() {
         </div>
       </div>
 
-      <BookingsBoard reservations={reservations} />
+      <BookingsBoard reservations={reservations} days={dayOptions} />
     </div>
   );
 }

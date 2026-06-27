@@ -13,7 +13,9 @@ import { useAudio } from "@/lib/audio";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { MustDoBadge, SecretBadge } from "@/components/Badge";
 import { ActivityForm, type ActivityFormValues } from "@/components/ActivityForm";
+import { DayForm } from "@/components/DayForm";
 import { deleteActivityAction } from "@/app/actions/activities";
+import { deleteDayAction } from "@/app/actions/days";
 
 export interface BoardActivity extends ActivityFormValues {
   dayNumber: number;
@@ -21,12 +23,13 @@ export interface BoardActivity extends ActivityFormValues {
 }
 
 export interface BoardDay {
+  id: number;
   day: number;
   city: string;
   title: string;
   summary: string;
-  transport?: string;
-  restDay?: boolean;
+  transport: string | null;
+  restDay: boolean;
 }
 
 export function ItineraryBoard({
@@ -42,7 +45,10 @@ export function ItineraryBoard({
   const [filters, setFilters] = useState<Set<Category>>(new Set());
   const [addOn, setAddOn] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+  const [editDayId, setEditDayId] = useState<number | null>(null);
+  const [addingDay, setAddingDay] = useState(false);
   const filtering = filters.size > 0;
+  const lastDay = days.reduce((m, d) => Math.max(m, d.day), 0);
 
   function toggle(cat: Category) {
     play("tap");
@@ -93,7 +99,7 @@ export function ItineraryBoard({
         const dateLabel = dateForDay(startDate, day.day);
         return (
           <article
-            key={day.day}
+            key={day.id}
             className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft"
           >
             <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-paper/60 px-5 py-4">
@@ -114,22 +120,71 @@ export function ItineraryBoard({
                   </p>
                 </div>
               </div>
-              {day.restDay && (
-                <span className="rounded-md border border-matcha/50 bg-matcha/20 px-2.5 py-0.5 text-xs font-medium text-ink">
-                  relaxed day
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {day.restDay && (
+                  <span className="rounded-md border border-matcha/50 bg-matcha/20 px-2.5 py-0.5 text-xs font-medium text-ink">
+                    relaxed
+                  </span>
+                )}
+                <button
+                  onClick={() =>
+                    setEditDayId(editDayId === day.id ? null : day.id)
+                  }
+                  className="rounded-md border border-ink/15 px-2 py-1 text-xs font-medium text-ink/70 hover:bg-ink/5"
+                >
+                  Edit day
+                </button>
+                {day.day === lastDay && (
+                  <form
+                    action={deleteDayAction}
+                    onSubmit={(e) => {
+                      if (
+                        !confirm(
+                          `Remove Day ${day.day} and everything on it? This can't be undone.`
+                        )
+                      )
+                        e.preventDefault();
+                    }}
+                  >
+                    <input type="hidden" name="dayNumber" value={day.day} />
+                    <button
+                      type="submit"
+                      className="rounded-md border border-red/30 px-2 py-1 text-xs font-medium text-red/80 hover:bg-red/5"
+                    >
+                      Remove
+                    </button>
+                  </form>
+                )}
+              </div>
             </header>
 
-            <div className="space-y-1 px-5 py-4">
-              <p className="text-sm text-ink/70">{day.summary}</p>
-              {day.transport && (
-                <p className="flex items-start gap-1.5 pt-1 text-sm text-ink/60">
-                  <span aria-hidden>🚆</span>
-                  <span>{day.transport}</span>
-                </p>
-              )}
-            </div>
+            {editDayId === day.id ? (
+              <div className="px-5 py-4">
+                <DayForm
+                  initial={{
+                    id: day.id,
+                    city: day.city,
+                    title: day.title,
+                    summary: day.summary,
+                    transport: day.transport,
+                    restDay: day.restDay,
+                  }}
+                  onClose={() => setEditDayId(null)}
+                />
+              </div>
+            ) : (
+              <div className="space-y-1 px-5 py-4">
+                {day.summary && (
+                  <p className="text-sm text-ink/70">{day.summary}</p>
+                )}
+                {day.transport && (
+                  <p className="flex items-start gap-1.5 pt-1 text-sm text-ink/60">
+                    <span aria-hidden>🚆</span>
+                    <span>{day.transport}</span>
+                  </p>
+                )}
+              </div>
+            )}
 
             <ul className="divide-y divide-ink/10 border-t border-ink/10">
               {acts.map((act) => {
@@ -267,6 +322,18 @@ export function ItineraryBoard({
           </article>
         );
       })}
+
+      {/* Add a day */}
+      {addingDay ? (
+        <DayForm onClose={() => setAddingDay(false)} />
+      ) : (
+        <button
+          onClick={() => setAddingDay(true)}
+          className="w-full rounded-lg border border-dashed border-ink/25 bg-white/60 px-4 py-3 text-sm font-semibold text-ink/70 hover:border-ink/40 hover:text-ink"
+        >
+          + Add a day (Day {lastDay + 1})
+        </button>
+      )}
     </div>
   );
 }

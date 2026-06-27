@@ -2,12 +2,13 @@
 
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { days } from "@/lib/trip";
 import {
   addReservationAction,
   updateReservationAction,
 } from "@/app/actions/reservations";
 import type { FormResult } from "@/app/actions/activities";
+
+export type DayOption = { dayNumber: number; city: string };
 
 export interface ReservationFormValues {
   id: number;
@@ -29,9 +30,11 @@ const inputCls =
 export function ReservationForm({
   initial,
   onClose,
+  days,
 }: {
   initial?: ReservationFormValues;
   onClose: () => void;
+  days: DayOption[];
 }) {
   const [state, formAction, pending] = useActionState<FormResult, FormData>(
     initial ? updateReservationAction : addReservationAction,
@@ -93,8 +96,8 @@ export function ReservationForm({
           >
             <option value="">— none —</option>
             {days.map((d) => (
-              <option key={d.day} value={d.day}>
-                Day {d.day} · {d.city}
+              <option key={d.dayNumber} value={d.dayNumber}>
+                Day {d.dayNumber} · {d.city}
               </option>
             ))}
           </select>
