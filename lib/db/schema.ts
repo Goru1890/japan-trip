@@ -15,6 +15,9 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   /** Null until the user claims the account by setting a password on first login. */
   passwordHash: text("password_hash"),
+  /** Brute-force lockout. */
+  failedAttempts: integer("failed_attempts").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

@@ -30,7 +30,8 @@ export function getDb(): NodePgDatabase<typeof schema> {
       new Pool({
         connectionString: connectionString(),
         max: 5,
-        ssl: { rejectUnauthorized: false },
+        // Verify the server certificate (Neon/Vercel present valid certs).
+        ssl: { rejectUnauthorized: true },
       });
     globalForDb.__pool = pool;
     globalForDb.__db = drizzle(pool, { schema });
