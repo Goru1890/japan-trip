@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "travel-planner": {
+      "source": "travisjneuman/.claude",
+      "sourceType": "github",
+      "skillPath": "skills/travel-planner/SKILL.md",
+      "computedHash": "6131eee07553e1c29acd4240c4d6d30cc7015b7e4e05ab379c21c885dfd4ee08"
+    }
+  }
+}
