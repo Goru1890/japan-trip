@@ -3,10 +3,12 @@ import { getSession } from "@/lib/auth";
 import {
   getStartDate,
   getDays,
+  getStays,
   getVisibleActivities,
   getVisibleReservations,
 } from "@/lib/db/queries";
 import { type Category } from "@/lib/trip";
+import { type StayView, type StayStatus } from "@/lib/stays";
 import {
   computeNextSteps,
   type DayMeta,
@@ -118,12 +120,23 @@ export default async function NowPage() {
   const session = await getSession();
   const uid = session?.uid ?? -1;
 
-  const [startDate, dayRows, acts, resvs] = await Promise.all([
+  const [startDate, dayRows, stayRows, acts, resvs] = await Promise.all([
     getStartDate(),
     getDays(),
+    getStays(),
     getVisibleActivities(uid),
     getVisibleReservations(uid),
   ]);
+
+  const stays: StayView[] = stayRows.map((s) => ({
+    id: s.id,
+    city: s.city,
+    area: s.area,
+    fromDay: s.fromDay,
+    toDay: s.toDay,
+    note: s.note,
+    status: s.status as StayStatus,
+  }));
 
   const dayMetas: DayMeta[] = dayRows.map((d) => ({
     dayNumber: d.dayNumber,
@@ -162,6 +175,7 @@ export default async function NowPage() {
   const result = computeNextSteps(
     startDate,
     dayMetas,
+    stays,
     nowActs,
     nowResvs,
     new Date()

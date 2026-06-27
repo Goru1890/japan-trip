@@ -1,5 +1,6 @@
-import { stayForDay, categoryMeta, type Category } from "./trip";
+import { categoryMeta, type Category } from "./trip";
 import { mapsUrl, bookingUrl } from "./links";
+import { stayForDayIn, stayQuery, type StayView } from "./stays";
 
 // Pure helpers for the "what now / what next" view. Trip time is reckoned in
 // Japan local time (Asia/Tokyo). The view merges four kinds of "steps" —
@@ -129,6 +130,7 @@ function activityAction(a: NowActivity): string {
 export function buildSteps(
   startIso: string,
   dayList: DayMeta[],
+  stays: StayView[],
   activities: NowActivity[],
   reservations: NowReservation[]
 ): Step[] {
@@ -138,7 +140,7 @@ export function buildSteps(
     dayList.find((d) => d.dayNumber === n)?.city ?? "";
 
   for (const d of dayList) {
-    const stay = stayForDay(d.dayNumber);
+    const stay = stayForDayIn(stays, d.dayNumber);
 
     // 1) Travel leg — start of day.
     if (d.transport) {
@@ -154,7 +156,7 @@ export function buildSteps(
         icon: d.dayNumber === lastDay && isAirport ? "✈️" : "🚆",
         action: d.dayNumber === lastDay ? "Head out —" : "Travel —",
         title: d.transport,
-        mapsUrl: arriving ? mapsUrl(stay!.mapsQuery) : undefined,
+        mapsUrl: arriving ? mapsUrl(stayQuery(stay!)) : undefined,
       });
     }
 
@@ -190,8 +192,8 @@ export function buildSteps(
         icon: "🛏️",
         action: arrival ? "Check in at" : "Back to your hotel —",
         title: `${stay.area} · ${stay.city}`,
-        mapsUrl: mapsUrl(stay.mapsQuery),
-        linkUrl: bookingUrl(stay.bookingQuery),
+        mapsUrl: mapsUrl(stayQuery(stay)),
+        linkUrl: bookingUrl(stayQuery(stay)),
         linkLabel: "Find hotels",
       });
     }
@@ -241,11 +243,12 @@ export interface NextSteps {
 export function computeNextSteps(
   startIso: string,
   dayList: DayMeta[],
+  stays: StayView[],
   activities: NowActivity[],
   reservations: NowReservation[],
   now: Date
 ): NextSteps {
-  const steps = buildSteps(startIso, dayList, activities, reservations);
+  const steps = buildSteps(startIso, dayList, stays, activities, reservations);
   const lastDay = dayList.reduce((m, d) => Math.max(m, d.dayNumber), 0);
   const totalDays = dayList.length;
 

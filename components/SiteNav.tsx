@@ -16,7 +16,13 @@ const links: { href: string; label: string; icon: IconName }[] = [
   { href: "/budget", label: "Budget", icon: "budget" },
 ];
 
-export function SiteNav({ user }: { user: string | null }) {
+export function SiteNav({
+  user,
+  title,
+}: {
+  user: string | null;
+  title: string;
+}) {
   const pathname = usePathname();
   const { enabled, setEnabled, play, loaded } = useAudio();
 
@@ -51,7 +57,7 @@ export function SiteNav({ user }: { user: string | null }) {
             unoptimized
             className="h-8 w-8"
           />
-          <span className="hidden text-ink sm:inline">Japan Trip</span>
+          <span className="hidden text-ink sm:inline">{title}</span>
         </Link>
 
         {user ? (

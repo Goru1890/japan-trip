@@ -1,8 +1,21 @@
 import "server-only";
 import { asc, eq, or, sql } from "drizzle-orm";
 import { getDb } from "./index";
-import { activities, reservations, settings, tripDays } from "./schema";
-import type { ActivityRow, ReservationRow, TripDayRow } from "./schema";
+import {
+  activities,
+  reservations,
+  settings,
+  tripDays,
+  stays,
+  budgetLines,
+} from "./schema";
+import type {
+  ActivityRow,
+  ReservationRow,
+  TripDayRow,
+  StayRow,
+  BudgetLineRow,
+} from "./schema";
 import { tripMeta } from "@/lib/trip";
 
 // ---- visibility & permission rules ----
@@ -284,7 +297,122 @@ export async function deleteDay(dayNumber: number): Promise<void> {
   await db.delete(tripDays).where(eq(tripDays.dayNumber, dayNumber));
 }
 
+// ---------- stays (lodging) ----------
+
+export interface StayInput {
+  city: string;
+  area: string;
+  fromDay: number;
+  toDay: number;
+  note?: string;
+  status?: string;
+}
+
+export async function getStays(): Promise<StayRow[]> {
+  const db = getDb();
+  return db.select().from(stays).orderBy(asc(stays.fromDay), asc(stays.id));
+}
+
+export async function addStay(input: StayInput): Promise<void> {
+  const db = getDb();
+  const [{ max }] = await db
+    .select({ max: sql<number>`coalesce(max(${stays.sortOrder}), -1)` })
+    .from(stays);
+  await db.insert(stays).values({
+    city: input.city,
+    area: input.area,
+    fromDay: input.fromDay,
+    toDay: input.toDay,
+    note: input.note ?? "",
+    status: input.status ?? "planned",
+    sortOrder: Number(max ?? -1) + 1,
+  });
+}
+
+export async function updateStay(id: number, input: StayInput): Promise<void> {
+  const db = getDb();
+  await db
+    .update(stays)
+    .set({
+      city: input.city,
+      area: input.area,
+      fromDay: input.fromDay,
+      toDay: input.toDay,
+      note: input.note ?? "",
+      status: input.status ?? "planned",
+    })
+    .where(eq(stays.id, id));
+}
+
+export async function deleteStay(id: number): Promise<void> {
+  const db = getDb();
+  await db.delete(stays).where(eq(stays.id, id));
+}
+
+// ---------- budget ----------
+
+export interface BudgetInput {
+  category: string;
+  estimate: number;
+  note?: string;
+}
+
+export async function getBudget(): Promise<BudgetLineRow[]> {
+  const db = getDb();
+  return db
+    .select()
+    .from(budgetLines)
+    .orderBy(asc(budgetLines.sortOrder), asc(budgetLines.id));
+}
+
+export async function addBudgetLine(input: BudgetInput): Promise<void> {
+  const db = getDb();
+  const [{ max }] = await db
+    .select({ max: sql<number>`coalesce(max(${budgetLines.sortOrder}), -1)` })
+    .from(budgetLines);
+  await db.insert(budgetLines).values({
+    category: input.category,
+    estimate: Math.round(input.estimate) || 0,
+    note: input.note ?? "",
+    sortOrder: Number(max ?? -1) + 1,
+  });
+}
+
+export async function updateBudgetLine(
+  id: number,
+  input: BudgetInput
+): Promise<void> {
+  const db = getDb();
+  await db
+    .update(budgetLines)
+    .set({
+      category: input.category,
+      estimate: Math.round(input.estimate) || 0,
+      note: input.note ?? "",
+    })
+    .where(eq(budgetLines.id, id));
+}
+
+export async function deleteBudgetLine(id: number): Promise<void> {
+  const db = getDb();
+  await db.delete(budgetLines).where(eq(budgetLines.id, id));
+}
+
 // ---------- settings ----------
+
+export async function getSettings(): Promise<Record<string, string>> {
+  const db = getDb();
+  const rows = await db.select().from(settings);
+  return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  const db = getDb();
+  await db
+    .insert(settings)
+    .values({ key, value })
+    .onConflictDoUpdate({ target: settings.key, set: { value } });
+}
 
 export async function getStartDate(): Promise<string> {
   const db = getDb();

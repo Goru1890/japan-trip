@@ -1,7 +1,14 @@
 import "dotenv/config";
 import { getDb } from "../lib/db";
-import { users, settings, activities, tripDays } from "../lib/db/schema";
-import { days, tripMeta } from "../lib/trip";
+import {
+  users,
+  settings,
+  activities,
+  tripDays,
+  stays as staysTable,
+  budgetLines,
+} from "../lib/db/schema";
+import { days, tripMeta, stays, budget } from "../lib/trip";
 
 async function main() {
   const db = getDb();
@@ -67,6 +74,59 @@ async function main() {
     console.log(`✓ seeded ${rows.length} activities from the curated itinerary`);
   } else {
     console.log("• activities already present — skipped");
+  }
+
+  // Trip-level settings (title, subtitle, travelers, season note).
+  await db
+    .insert(settings)
+    .values([
+      { key: "title", value: tripMeta.title },
+      { key: "subtitle", value: tripMeta.subtitle },
+      { key: "travelers", value: String(tripMeta.travelers) },
+      { key: "season_note", value: tripMeta.seasonNote },
+    ])
+    .onConflictDoNothing({ target: settings.key });
+  console.log("✓ trip settings ensured");
+
+  // Stays (lodging).
+  const existingStays = await db
+    .select({ id: staysTable.id })
+    .from(staysTable)
+    .limit(1);
+  if (existingStays.length === 0) {
+    await db.insert(staysTable).values(
+      stays.map((s, i) => ({
+        city: s.city,
+        area: s.area,
+        fromDay: s.fromDay,
+        toDay: s.toDay,
+        note: s.note,
+        status: s.status,
+        sortOrder: i,
+      }))
+    );
+    console.log(`✓ seeded ${stays.length} stays`);
+  } else {
+    console.log("• stays already present — skipped");
+  }
+
+  // Budget lines.
+  const existingBudget = await db
+    .select({ id: budgetLines.id })
+    .from(budgetLines)
+    .limit(1);
+  if (existingBudget.length === 0) {
+    await db.insert(budgetLines).values(
+      budget.map((b, i) => ({
+        category: b.category,
+        estimate: b.estimate,
+        note: b.note,
+        sortOrder: i,
+      }))
+    );
+    console.log(`✓ seeded ${budget.length} budget lines`);
+  } else {
+    console.log("• budget already present — skipped");
   }
 
   console.log("\nSeed complete.");

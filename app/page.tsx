@@ -1,16 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  tripMeta,
-  categoryMeta,
-  type Category,
-  stays,
-  stayNights,
-} from "@/lib/trip";
+import { tripMeta, categoryMeta, type Category } from "@/lib/trip";
+import { stayNights } from "@/lib/stays";
 import { StartDateControl } from "@/components/StartDateControl";
 import { CategoryDot } from "@/components/CategoryBadge";
 import { Icon, type IconName } from "@/components/Icon";
-import { getStartDate, getDays } from "@/lib/db/queries";
+import { TripSettingsForm } from "@/components/TripSettingsForm";
+import {
+  getStartDate,
+  getDays,
+  getStays,
+  getSettings,
+} from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -42,12 +43,21 @@ const quickLinks: { href: string; label: string; desc: string; icon: IconName }[
   ];
 
 export default async function HomePage() {
-  const [startDate, dayRows] = await Promise.all([getStartDate(), getDays()]);
+  const [startDate, dayRows, stayRows, settings] = await Promise.all([
+    getStartDate(),
+    getDays(),
+    getStays(),
+    getSettings(),
+  ]);
+  const title = settings.title || tripMeta.title;
+  const subtitle = settings.subtitle || tripMeta.subtitle;
+  const seasonNote = settings.season_note || tripMeta.seasonNote;
+  const travelers = Number(settings.travelers || "1") || 1;
   const segments = routeSegments(dayRows);
   const cities = new Set(
     dayRows.map((d) => d.city).filter((c) => c !== "Departure")
   );
-  const nights = stays.reduce((n, s) => n + stayNights(s), 0);
+  const nights = stayRows.reduce((n, s) => n + stayNights(s), 0);
 
   const stats = [
     { label: "Days", value: dayRows.length },
@@ -74,15 +84,20 @@ export default async function HomePage() {
             日本 · Your trip
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-paper drop-shadow sm:text-5xl">
-            {tripMeta.title}
+            {title}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-paper/90 sm:text-base">
-            {tripMeta.subtitle}
+            {subtitle}
           </p>
         </div>
       </section>
 
-      <p className="text-sm text-ink/70">{tripMeta.seasonNote}</p>
+      <div className="space-y-2">
+        <p className="text-sm text-ink/70">{seasonNote}</p>
+        <TripSettingsForm
+          initial={{ title, subtitle, travelers, seasonNote }}
+        />
+      </div>
 
       {/* Start date */}
       <StartDateControl totalDays={dayRows.length} initial={startDate} />
@@ -154,9 +169,9 @@ export default async function HomePage() {
           </Link>
         </div>
         <ul className="mt-3 divide-y divide-ink/10">
-          {stays.map((s) => (
+          {stayRows.map((s) => (
             <li
-              key={s.city}
+              key={s.id}
               className="flex items-baseline justify-between gap-3 py-2 text-sm"
             >
               <span className="font-medium text-ink">{s.city}</span>

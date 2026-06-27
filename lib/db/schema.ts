@@ -70,13 +70,36 @@ export const reservations = pgTable("reservations", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Simple shared key/value (e.g. the trip start date).
+// Where you sleep — editable lodging plan, linked to days by a day range.
+export const stays = pgTable("stays", {
+  id: serial("id").primaryKey(),
+  city: text("city").notNull(),
+  area: text("area").notNull(),
+  fromDay: integer("from_day").notNull(),
+  toDay: integer("to_day").notNull(),
+  note: text("note").notNull().default(""),
+  status: text("status").notNull().default("planned"),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+// Budget line items.
+export const budgetLines = pgTable("budget_lines", {
+  id: serial("id").primaryKey(),
+  category: text("category").notNull(),
+  estimate: integer("estimate").notNull().default(0),
+  note: text("note").notNull().default(""),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+// Simple shared key/value (e.g. the trip start date, title, travelers).
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 });
 
 export type TripDayRow = typeof tripDays.$inferSelect;
+export type StayRow = typeof stays.$inferSelect;
+export type BudgetLineRow = typeof budgetLines.$inferSelect;
 export type ActivityRow = typeof activities.$inferSelect;
 export type ReservationRow = typeof reservations.$inferSelect;
 export type UserRow = typeof users.$inferSelect;

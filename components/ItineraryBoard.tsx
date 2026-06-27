@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import {
-  categoryMeta,
-  type Category,
-  stayForDay,
-  stayNights,
-} from "@/lib/trip";
+import { categoryMeta, type Category } from "@/lib/trip";
 import { dateForDay } from "@/lib/format";
 import { mapsUrl, bookingUrl } from "@/lib/links";
+import {
+  stayForDayIn,
+  stayNights,
+  stayQuery,
+  type StayView,
+} from "@/lib/stays";
 import { useAudio } from "@/lib/audio";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { MustDoBadge, SecretBadge } from "@/components/Badge";
@@ -35,10 +36,12 @@ export interface BoardDay {
 export function ItineraryBoard({
   startDate,
   days,
+  stays,
   activitiesByDay,
 }: {
   startDate: string;
   days: BoardDay[];
+  stays: StayView[];
   activitiesByDay: Record<number, BoardActivity[]>;
 }) {
   const { play } = useAudio();
@@ -95,7 +98,7 @@ export function ItineraryBoard({
 
       {days.map((day) => {
         const acts = activitiesByDay[day.day] ?? [];
-        const stay = stayForDay(day.day);
+        const stay = stayForDayIn(stays, day.day);
         const dateLabel = dateForDay(startDate, day.day);
         return (
           <article
@@ -301,7 +304,7 @@ export function ItineraryBoard({
                 </div>
                 <div className="flex items-center gap-3 text-xs font-medium">
                   <a
-                    href={bookingUrl(stay.bookingQuery)}
+                    href={bookingUrl(stayQuery(stay))}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-red hover:underline"
@@ -309,7 +312,7 @@ export function ItineraryBoard({
                     🏨 Hotels ↗
                   </a>
                   <a
-                    href={mapsUrl(stay.mapsQuery)}
+                    href={mapsUrl(stayQuery(stay))}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-red hover:underline"
