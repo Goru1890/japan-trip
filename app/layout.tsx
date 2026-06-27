@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteNav } from "@/components/SiteNav";
+import { BottomNav } from "@/components/BottomNav";
 import { AudioProvider } from "@/lib/audio";
 import { SakuraFall } from "@/components/SakuraFall";
 import { getSession } from "@/lib/auth";
@@ -36,12 +37,13 @@ export default async function RootLayout({
         <AudioProvider>
           <SakuraFall />
           <SiteNav user={session?.name ?? null} title={title} />
-          <main className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-24 pt-6 sm:px-6">
+          <main className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6">
             {children}
           </main>
-          <footer className="relative z-10 border-t border-ink/10 bg-paper/55 py-6 text-center text-xs text-ink/55 backdrop-blur">
+          <footer className="relative z-10 hidden border-t border-ink/10 bg-paper/55 py-6 text-center text-xs text-ink/55 backdrop-blur sm:block">
             A private travel notebook for two. よい旅を — have a good trip.
           </footer>
+          {session?.name ? <BottomNav /> : null}
         </AudioProvider>
       </body>
     </html>

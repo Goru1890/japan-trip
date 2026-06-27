@@ -7,7 +7,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { useAudio } from "@/lib/audio";
 import { logout } from "@/app/actions/auth";
 
-const links: { href: string; label: string; icon: IconName }[] = [
+export const navLinks: { href: string; label: string; icon: IconName }[] = [
   { href: "/now", label: "Now", icon: "date" },
   { href: "/itinerary", label: "Itinerary", icon: "train" },
   { href: "/hotels", label: "Hotels", icon: "hotel" },
@@ -16,13 +16,7 @@ const links: { href: string; label: string; icon: IconName }[] = [
   { href: "/budget", label: "Budget", icon: "budget" },
 ];
 
-export function SiteNav({
-  user,
-  title,
-}: {
-  user: string | null;
-  title: string;
-}) {
+export function SiteNav({ user, title }: { user: string | null; title: string }) {
   const pathname = usePathname();
   const { enabled, setEnabled, play, loaded } = useAudio();
 
@@ -46,7 +40,7 @@ export function SiteNav({
         <Link
           href="/"
           onClick={() => play("tap")}
-          className="mr-1 flex items-center gap-2 font-semibold"
+          className="flex items-center gap-2 font-semibold"
         >
           <Image
             src="/assets/images/mascot-suitcase-daruma.svg"
@@ -57,13 +51,14 @@ export function SiteNav({
             unoptimized
             className="h-8 w-8"
           />
-          <span className="hidden text-ink sm:inline">{title}</span>
+          <span className="text-ink">{title}</span>
         </Link>
 
         {user ? (
           <>
-            <div className="flex flex-1 items-center gap-1 overflow-x-auto">
-              {links.map((link) => {
+            {/* Desktop links (mobile uses the bottom bar) */}
+            <div className="ml-1 hidden flex-1 items-center gap-1 overflow-x-auto sm:flex">
+              {navLinks.map((link) => {
                 const active = pathname.startsWith(link.href);
                 return (
                   <Link
@@ -79,38 +74,40 @@ export function SiteNav({
                     ].join(" ")}
                   >
                     <Icon name={link.icon} size={20} className="h-5 w-5" />
-                    <span className="hidden sm:inline">{link.label}</span>
+                    {link.label}
                   </Link>
                 );
               })}
             </div>
 
-            <span className="hidden shrink-0 items-center gap-1 text-sm text-ink/70 md:flex">
-              <span aria-hidden>🙂</span>
-              {user}
-            </span>
-            <button
-              onClick={toggleSound}
-              aria-pressed={enabled}
-              title={enabled ? "Sound on" : "Sound off"}
-              className="shrink-0 rounded-md border border-ink/15 px-2 py-1.5 text-sm hover:bg-ink/5"
-            >
-              <span aria-hidden>{loaded && enabled ? "🔊" : "🔈"}</span>
-              <span className="sr-only">Toggle sound</span>
-            </button>
-            <form action={logout} className="shrink-0">
+            <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+              <span className="hidden items-center gap-1 text-sm text-ink/70 md:flex">
+                <span aria-hidden>🙂</span>
+                {user}
+              </span>
               <button
-                type="submit"
-                title="Log out"
-                className="rounded-md border border-ink/15 px-2 py-1.5 text-sm text-ink/70 hover:bg-ink/5"
+                onClick={toggleSound}
+                aria-pressed={enabled}
+                title={enabled ? "Sound on" : "Sound off"}
+                className="shrink-0 rounded-md border border-ink/15 px-2 py-1.5 text-sm hover:bg-ink/5"
               >
-                <span aria-hidden>↩</span>
-                <span className="sr-only">Log out</span>
+                <span aria-hidden>{loaded && enabled ? "🔊" : "🔈"}</span>
+                <span className="sr-only">Toggle sound</span>
               </button>
-            </form>
+              <form action={logout} className="shrink-0">
+                <button
+                  type="submit"
+                  title="Log out"
+                  className="rounded-md border border-ink/15 px-2 py-1.5 text-sm text-ink/70 hover:bg-ink/5"
+                >
+                  <span aria-hidden>↩</span>
+                  <span className="sr-only">Log out</span>
+                </button>
+              </form>
+            </div>
           </>
         ) : (
-          <span className="flex-1 text-sm font-medium text-ink/60">
+          <span className="flex-1 text-right text-sm font-medium text-ink/60">
             Private trip planner
           </span>
         )}
