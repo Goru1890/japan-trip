@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { packing, prep, type ChecklistSection } from "@/lib/trip";
-import { useLocalStorage } from "@/lib/useLocalStorage";
-import { CHECKLIST_KEY } from "@/lib/constants";
+import { useTripState } from "@/lib/state";
+import { useAudio } from "@/lib/audio";
+import { SyncSettings } from "@/components/SyncSettings";
+import { Icon } from "@/components/Icon";
 
 type Checked = Record<string, boolean>;
 
@@ -12,10 +15,8 @@ function itemKey(group: string, section: string, item: string) {
 }
 
 export default function ChecklistPage() {
-  const [checked, setChecked, loaded] = useLocalStorage<Checked>(
-    CHECKLIST_KEY,
-    {}
-  );
+  const { checklist, toggleChecklistItem, loaded } = useTripState();
+  const { play } = useAudio();
 
   const allItems = useMemo(() => {
     const keys: string[] = [];
@@ -29,56 +30,81 @@ export default function ChecklistPage() {
     return keys;
   }, []);
 
-  const doneCount = loaded
-    ? allItems.filter((k) => checked[k]).length
-    : 0;
+  const doneCount = loaded ? allItems.filter((k) => checklist[k]).length : 0;
   const pct = Math.round((doneCount / allItems.length) * 100);
+  const allDone = loaded && doneCount === allItems.length;
 
-  function toggle(key: string) {
-    setChecked((prev) => ({ ...prev, [key]: !prev[key] }));
+  function handleToggle(key: string) {
+    if (!checklist[key]) play("complete"); // only on check, not uncheck
+    toggleChecklistItem(key);
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Prep & packing</h1>
-        <p className="text-sm text-stone-500">
-          Progress saves in your browser. Two lists: a countdown timeline and
-          what to pack.
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center gap-2.5">
+        <Icon name="checklist" size={32} className="h-8 w-8" />
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
+            Prep &amp; packing
+          </h1>
+          <p className="text-sm text-ink/60">
+            A countdown timeline and a packing list. Progress saves automatically.
+          </p>
+        </div>
       </div>
 
+      <SyncSettings />
+
       {/* Progress */}
-      <div className="rounded-2xl border border-stone-200 bg-white/70 p-4">
+      <div className="rounded-lg border border-ink/10 bg-white p-4 shadow-soft">
         <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">
+          <span className="font-medium text-ink">
             {loaded ? `${doneCount} of ${allItems.length} done` : "—"}
           </span>
-          <span className="tabular-nums text-stone-500">{loaded ? `${pct}%` : ""}</span>
+          <span className="tabular-nums text-ink/55">
+            {loaded ? `${pct}%` : ""}
+          </span>
         </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-stone-100">
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink/10">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all"
+            className="h-full rounded-full bg-matcha transition-all"
             style={{ width: loaded ? `${pct}%` : "0%" }}
           />
         </div>
       </div>
 
+      {allDone && (
+        <div className="flex items-center gap-3 rounded-lg border border-matcha/50 bg-matcha/15 p-4">
+          <Image
+            src="/assets/images/mascot-suitcase-daruma.svg"
+            alt=""
+            aria-hidden
+            width={48}
+            height={48}
+            unoptimized
+            className="h-12 w-12"
+          />
+          <p className="text-sm font-medium text-ink">
+            All set — you&apos;re fully packed and prepped. Have an amazing trip! 🎉
+          </p>
+        </div>
+      )}
+
       <ChecklistGroup
         heading="Before you go"
         group="prep"
         sections={prep}
-        checked={checked}
+        checked={checklist}
         loaded={loaded}
-        onToggle={toggle}
+        onToggle={handleToggle}
       />
       <ChecklistGroup
         heading="What to pack"
         group="packing"
         sections={packing}
-        checked={checked}
+        checked={checklist}
         loaded={loaded}
-        onToggle={toggle}
+        onToggle={handleToggle}
       />
     </div>
   );
@@ -101,14 +127,14 @@ function ChecklistGroup({
 }) {
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-semibold">{heading}</h2>
+      <h2 className="text-lg font-semibold text-ink">{heading}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {sections.map((section) => (
           <div
             key={section.title}
-            className="rounded-2xl border border-stone-200 bg-white/80 p-4"
+            className="rounded-lg border border-ink/10 bg-white p-4 shadow-soft"
           >
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink/55">
               {section.title}
             </h3>
             <ul className="space-y-1">
@@ -117,17 +143,19 @@ function ChecklistGroup({
                 const isChecked = loaded && !!checked[key];
                 return (
                   <li key={item}>
-                    <label className="flex cursor-pointer items-start gap-2.5 rounded-lg px-1.5 py-1.5 hover:bg-stone-50">
+                    <label className="flex cursor-pointer items-start gap-2.5 rounded-md px-1.5 py-1.5 hover:bg-paper/70">
                       <input
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => onToggle(key)}
-                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 accent-emerald-600"
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink/30 accent-matcha"
                       />
                       <span
                         className={[
                           "text-sm",
-                          isChecked ? "text-stone-400 line-through" : "text-stone-700",
+                          isChecked
+                            ? "text-ink/40 line-through"
+                            : "text-ink/80",
                         ].join(" ")}
                       >
                         {item}

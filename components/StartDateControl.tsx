@@ -1,47 +1,40 @@
 "use client";
 
-import { useLocalStorage } from "@/lib/useLocalStorage";
-import { START_DATE_KEY } from "@/lib/constants";
-import { tripMeta } from "@/lib/trip";
+import { useTripState } from "@/lib/state";
 import { parseLocalDate, formatDayLabel, addDays } from "@/lib/format";
-
-/** Read the saved start date (or the default) anywhere in a client component. */
-export function useStartDate() {
-  const [start, setStart, loaded] = useLocalStorage<string>(
-    START_DATE_KEY,
-    tripMeta.defaultStartDate
-  );
-  return { start, setStart, loaded };
-}
+import { Icon } from "@/components/Icon";
 
 export function StartDateControl({ totalDays }: { totalDays: number }) {
-  const { start, setStart, loaded } = useStartDate();
+  const { startDate, setStartDate, loaded } = useTripState();
 
-  const startDate = parseLocalDate(start);
+  const start = parseLocalDate(startDate);
   const endLabel =
-    startDate && loaded ? formatDayLabel(addDays(startDate, totalDays - 1)) : null;
+    start && loaded ? formatDayLabel(addDays(start, totalDays - 1)) : null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <label
-          htmlFor="start-date"
-          className="block text-xs font-medium uppercase tracking-wide text-stone-500"
-        >
-          Trip start date
-        </label>
-        <p className="text-sm text-stone-500">
-          {loaded && endLabel
-            ? `Day 1 onward — ends ${endLabel}. Saved in your browser.`
-            : "Set a date and every day updates."}
-        </p>
+    <div className="flex flex-col gap-3 rounded-lg border border-ink/10 bg-white p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2.5">
+        <Icon name="date" size={28} className="h-7 w-7 shrink-0" />
+        <div>
+          <label
+            htmlFor="start-date"
+            className="block text-xs font-medium uppercase tracking-wide text-ink/55"
+          >
+            Trip start date
+          </label>
+          <p className="text-sm text-ink/70">
+            {loaded && endLabel
+              ? `Day 1 onward — ends ${endLabel}.`
+              : "Set a date and every day updates."}
+          </p>
+        </div>
       </div>
       <input
         id="start-date"
         type="date"
-        value={start}
-        onChange={(e) => setStart(e.target.value)}
-        className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-vermillion focus:outline-none focus:ring-2 focus:ring-vermillion/30"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        className="rounded-md border border-ink/20 bg-white px-3 py-2 text-sm text-ink shadow-sm focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30"
       />
     </div>
   );

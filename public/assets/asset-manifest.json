@@ -1,0 +1,23 @@
+{
+  "images": {
+    "heroTokyoSakura": "/assets/images/hero-tokyo-sakura.png",
+    "ryokanOnsenCard": "/assets/images/card-ryokan-onsen.png",
+    "tokyoItineraryCard": "/assets/images/card-tokyo-itinerary.png",
+    "travelPattern": "/assets/images/pattern-japan-travel.png",
+    "mascotSuitcaseDaruma": "/assets/images/mascot-suitcase-daruma.svg",
+    "icons": {
+      "onsen": "/assets/images/icon-onsen.svg",
+      "hotel": "/assets/images/icon-hotel.svg",
+      "train": "/assets/images/icon-train.svg",
+      "checklist": "/assets/images/icon-checklist.svg",
+      "budget": "/assets/images/icon-budget.svg",
+      "date": "/assets/images/icon-date.svg"
+    }
+  },
+  "audio": {
+    "tap": "/assets/audio/tap.wav",
+    "complete": "/assets/audio/complete.wav",
+    "softOpen": "/assets/audio/soft-open.wav",
+    "ambientLoop": "/assets/audio/ambient-loop.wav"
+  }
+}

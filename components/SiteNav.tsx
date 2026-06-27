@@ -1,52 +1,91 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icon, type IconName } from "@/components/Icon";
+import { useAudio } from "@/lib/audio";
 
-const links = [
-  { href: "/", label: "Overview" },
-  { href: "/itinerary", label: "Itinerary" },
-  { href: "/budget", label: "Budget" },
-  { href: "/checklist", label: "Checklist" },
+const links: { href: string; label: string; icon: IconName }[] = [
+  { href: "/itinerary", label: "Itinerary", icon: "train" },
+  { href: "/hotels", label: "Hotels", icon: "hotel" },
+  { href: "/checklist", label: "Checklist", icon: "checklist" },
+  { href: "/budget", label: "Budget", icon: "budget" },
 ];
 
 export function SiteNav() {
   const pathname = usePathname();
+  const { enabled, setEnabled, play, loaded } = useAudio();
+
+  function toggleSound() {
+    const next = !enabled;
+    setEnabled(next);
+    if (next) {
+      // play after enabling so the user hears confirmation
+      setTimeout(() => {
+        try {
+          const a = new Audio("/assets/audio/soft-open.wav");
+          a.volume = 0.35;
+          void a.play().catch(() => {});
+        } catch {
+          // ignore
+        }
+      }, 0);
+    }
+  }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-washi/80 backdrop-blur supports-[backdrop-filter]:bg-[rgba(250,247,242,0.7)]">
-      <nav className="mx-auto flex w-full max-w-5xl items-center gap-1 px-4 py-3 sm:px-6">
-        <Link href="/" className="mr-3 flex items-center gap-2 font-semibold">
-          <span
+    <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/85 backdrop-blur supports-[backdrop-filter]:bg-[rgba(248,238,220,0.78)]">
+      <nav className="mx-auto flex w-full max-w-5xl items-center gap-2 px-4 py-2.5 sm:px-6">
+        <Link
+          href="/"
+          onClick={() => play("tap")}
+          className="mr-1 flex items-center gap-2 font-semibold"
+        >
+          <Image
+            src="/assets/images/mascot-suitcase-daruma.svg"
+            alt=""
             aria-hidden
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-vermillion text-sm text-white"
-          >
-            ⛩
-          </span>
-          <span className="hidden sm:inline">Japan Trip</span>
+            width={32}
+            height={32}
+            unoptimized
+            className="h-8 w-8"
+          />
+          <span className="hidden text-ink sm:inline">Japan Trip</span>
         </Link>
-        <div className="flex flex-1 items-center gap-0.5 overflow-x-auto">
+
+        <div className="flex flex-1 items-center gap-1 overflow-x-auto">
           {links.map((link) => {
-            const active =
-              link.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(link.href);
+            const active = pathname.startsWith(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => play("tap")}
+                aria-current={active ? "page" : undefined}
                 className={[
-                  "whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   active
-                    ? "bg-stone-900 text-white"
-                    : "text-stone-600 hover:bg-stone-200/60 hover:text-stone-900",
+                    ? "bg-ink text-paper"
+                    : "text-ink/70 hover:bg-ink/5 hover:text-ink",
                 ].join(" ")}
               >
+                <Icon name={link.icon} size={20} className="h-5 w-5" />
                 {link.label}
               </Link>
             );
           })}
         </div>
+
+        <button
+          onClick={toggleSound}
+          aria-pressed={enabled}
+          title={enabled ? "Sound on" : "Sound off"}
+          className="ml-1 shrink-0 rounded-md border border-ink/15 px-2 py-1.5 text-sm transition-colors hover:bg-ink/5"
+        >
+          <span aria-hidden>{loaded && enabled ? "🔊" : "🔈"}</span>
+          <span className="sr-only">Toggle sound</span>
+        </button>
       </nav>
     </header>
   );

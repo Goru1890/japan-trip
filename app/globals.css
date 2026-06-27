@@ -1,14 +1,30 @@
 @import "tailwindcss";
 
+/* Design tokens — see docs/art-direction.md & docs/frontend-guidelines.md */
 @theme {
-  --color-washi: #faf7f2;
-  --color-ink: #1c1917;
-  --color-sumi: #44403c;
-  --color-vermillion: #d64545;
+  --color-paper: #f8eedc;
+  --color-ink: #3f4a5a;
+  --color-sakura: #f6b3be;
+  --color-matcha: #7daa92;
+  --color-lantern: #f3b35b;
+  --color-cedar: #8a5a44;
+  --color-sky: #79b8d9;
+  --color-red: #d65f5f;
+
+  /* Cards stay friendly-but-tidy: 8px max. */
+  --radius: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 12px;
+
+  /* Calm motion (no bounce on data-heavy lists). */
+  --default-transition-duration: 150ms;
 }
 
 :root {
   color-scheme: light;
+  --shadow-soft: 0 10px 30px rgb(63 74 90 / 12%);
 }
 
 html {
@@ -16,7 +32,7 @@ html {
 }
 
 body {
-  background-color: var(--color-washi);
+  background-color: var(--color-paper);
   color: var(--color-ink);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", "Hiragino Sans", "Yu Gothic", Meiryo,
@@ -24,12 +40,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle paper texture via layered radial dots. */
-.bg-washi-texture {
-  background-color: var(--color-washi);
-  background-image: radial-gradient(
-    rgba(28, 25, 23, 0.035) 1px,
-    transparent 1px
-  );
-  background-size: 22px 22px;
+/* Soft brand shadow from the design tokens. */
+.shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+/* Faint travel-pattern wash for headers, hero backdrops, and empty states. */
+.bg-travel-pattern {
+  background-image: url("/assets/images/pattern-japan-travel.png");
+  background-size: 360px;
+  background-repeat: repeat;
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

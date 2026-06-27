@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Hotel</title>
+  <path fill="#F8EEDC" d="M14 20h36v33H14z"/>
+  <path fill="#D65F5F" d="M10 22 32 9l22 13-4 6-18-10-18 10z"/>
+  <path fill="#7DAA92" d="M24 34h16v19H24z"/>
+  <path fill="#F6B3BE" d="M19 26h8v7h-8zM37 26h8v7h-8z"/>
+  <path fill="none" stroke="#3F4A5A" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 53h36V25M10 22 32 9l22 13M24 53V34h16v19"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Train</title>
+  <path fill="#F8EEDC" d="M16 13h32c4 0 7 3 7 7v20c0 6-5 11-11 11H20c-6 0-11-5-11-11V20c0-4 3-7 7-7Z"/>
+  <path fill="#79B8D9" d="M15 20h34v14H15z"/>
+  <path fill="#F6B3BE" d="M18 40h10v5H18zM36 40h10v5H36z"/>
+  <path fill="none" stroke="#3F4A5A" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M16 13h32c4 0 7 3 7 7v20c0 6-5 11-11 11H20c-6 0-11-5-11-11V20c0-4 3-7 7-7ZM15 34h34M22 55l6-8M42 55l-6-8"/>
+</svg>

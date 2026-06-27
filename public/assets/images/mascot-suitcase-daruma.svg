@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title">
+  <title id="title">Suitcase daruma mascot</title>
+  <path fill="#F8EEDC" d="M23 106c0-27 23-49 57-49s57 22 57 49c0 25-20 43-57 43s-57-18-57-43Z"/>
+  <path fill="#D65F5F" d="M35 100c0-23 18-38 45-38s45 15 45 38c0 20-15 36-45 36s-45-16-45-36Z"/>
+  <path fill="#F8EEDC" d="M50 91c5-15 16-23 30-23s25 8 30 23c-7 11-17 16-30 16s-23-5-30-16Z"/>
+  <circle cx="67" cy="89" r="5" fill="#3F4A5A"/>
+  <circle cx="93" cy="89" r="5" fill="#3F4A5A"/>
+  <path fill="none" stroke="#3F4A5A" stroke-linecap="round" stroke-linejoin="round" stroke-width="5" d="M71 102c5 3 13 3 18 0M50 91c5-15 16-23 30-23s25 8 30 23M35 119c10 12 25 17 45 17s35-5 45-17"/>
+  <path fill="#7DAA92" d="M47 41h66c7 0 12 5 12 12v18H35V53c0-7 5-12 12-12Z"/>
+  <path fill="none" stroke="#3F4A5A" stroke-linecap="round" stroke-linejoin="round" stroke-width="5" d="M62 41v-7c0-6 5-10 18-10s18 4 18 10v7M35 71V53c0-7 5-12 12-12h66c7 0 12 5 12 12v18"/>
+  <path fill="#F6B3BE" d="M27 123c7 8 15 13 25 16l-14 11c-7-4-13-11-17-20zM133 123c-7 8-15 13-25 16l14 11c7-4 13-11 17-20z"/>
+</svg>

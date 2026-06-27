@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Budget</title>
+  <path fill="#F8EEDC" d="M13 18h38v35H13z"/>
+  <path fill="#7DAA92" d="M18 24h28v20H18z"/>
+  <circle cx="32" cy="34" r="7" fill="#F6B3BE"/>
+  <path fill="none" stroke="#3F4A5A" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 18h38v35H13zM18 24h28v20H18zM24 13h16M32 28v12M28 31c1-2 7-2 8 0M28 37c1 2 7 2 8 0"/>
+</svg>
