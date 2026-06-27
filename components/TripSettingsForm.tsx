@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setTripSettingsAction } from "@/app/actions/settings";
 import type { FormResult } from "@/app/actions/activities";
+import { useUI } from "@/lib/ui";
 
 export interface TripSettingsValues {
   title: string;
@@ -22,13 +23,15 @@ export function TripSettingsForm({ initial }: { initial: TripSettingsValues }) {
     {}
   );
   const router = useRouter();
+  const { toast } = useUI();
 
   useEffect(() => {
     if (state.ok) {
+      toast("Trip details saved");
       setOpen(false);
       router.refresh();
     }
-  }, [state.ok, router]);
+  }, [state.ok, router, toast]);
 
   if (!open) {
     return (

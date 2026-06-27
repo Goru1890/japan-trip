@@ -7,6 +7,7 @@ import {
   renameSectionAction,
 } from "@/app/actions/checklist";
 import type { FormResult } from "@/app/actions/activities";
+import { useUI } from "@/lib/ui";
 
 const inputCls =
   "min-w-0 flex-1 rounded-md border border-ink/20 bg-white px-2.5 py-1.5 text-sm text-ink focus:border-red focus:outline-none focus:ring-2 focus:ring-red/30";
@@ -25,13 +26,15 @@ export function ChecklistSectionForm({
     {}
   );
   const router = useRouter();
+  const { toast } = useUI();
 
   useEffect(() => {
     if (state.ok) {
+      toast(initial ? "Section renamed" : "Section added");
       onClose();
       router.refresh();
     }
-  }, [state.ok, onClose, router]);
+  }, [state.ok, onClose, router, toast, initial]);
 
   return (
     <form action={formAction} className="space-y-1.5">

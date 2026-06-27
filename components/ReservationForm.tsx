@@ -7,6 +7,7 @@ import {
   updateReservationAction,
 } from "@/app/actions/reservations";
 import type { FormResult } from "@/app/actions/activities";
+import { useUI } from "@/lib/ui";
 
 export type DayOption = { dayNumber: number; city: string };
 
@@ -41,13 +42,15 @@ export function ReservationForm({
     {}
   );
   const router = useRouter();
+  const { toast } = useUI();
 
   useEffect(() => {
     if (state.ok) {
+      toast(initial ? "Booking saved" : "Booking added");
       onClose();
       router.refresh();
     }
-  }, [state.ok, onClose, router]);
+  }, [state.ok, onClose, router, toast, initial]);
 
   return (
     <form

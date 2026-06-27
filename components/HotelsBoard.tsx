@@ -13,6 +13,7 @@ import { Icon } from "@/components/Icon";
 import { StayForm } from "@/components/StayForm";
 import type { DayOption } from "@/components/ReservationForm";
 import { deleteStayAction } from "@/app/actions/stays";
+import { DangerButton } from "@/components/DangerButton";
 
 export function HotelsBoard({
   stays,
@@ -106,20 +107,14 @@ export function HotelsBoard({
                 >
                   Edit
                 </button>
-                <form
+                <DangerButton
                   action={deleteStayAction}
-                  onSubmit={(e) => {
-                    if (!confirm("Delete this stay?")) e.preventDefault();
-                  }}
-                >
-                  <input type="hidden" name="id" value={stay.id} />
-                  <button
-                    type="submit"
-                    className="text-xs font-medium text-red/80 hover:underline"
-                  >
-                    Delete
-                  </button>
-                </form>
+                  fields={{ id: stay.id }}
+                  confirm="Delete this stay?"
+                  toast="Stay deleted"
+                  label="Delete"
+                  className="text-xs font-medium text-red/80 hover:underline"
+                />
               </div>
             </li>
           );

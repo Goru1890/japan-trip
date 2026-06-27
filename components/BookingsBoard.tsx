@@ -8,6 +8,7 @@ import {
   type DayOption,
 } from "@/components/ReservationForm";
 import { deleteReservationAction } from "@/app/actions/reservations";
+import { DangerButton } from "@/components/DangerButton";
 
 export interface BoardReservation extends ReservationFormValues {
   startsAtLabel: string | null;
@@ -111,20 +112,14 @@ export function BookingsBoard({
                     >
                       Edit
                     </button>
-                    <form
+                    <DangerButton
                       action={deleteReservationAction}
-                      onSubmit={(e) => {
-                        if (!confirm("Delete this booking?")) e.preventDefault();
-                      }}
-                    >
-                      <input type="hidden" name="id" value={r.id} />
-                      <button
-                        type="submit"
-                        className="text-red/80 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </form>
+                      fields={{ id: r.id }}
+                      confirm="Delete this booking?"
+                      toast="Booking deleted"
+                      label="Delete"
+                      className="text-red/80 hover:underline"
+                    />
                   </div>
                 )}
               </div>

@@ -21,6 +21,7 @@ import {
   type ReservationLite,
 } from "@/components/ActivityForm";
 import { DayForm } from "@/components/DayForm";
+import { DangerButton } from "@/components/DangerButton";
 import { deleteActivityAction } from "@/app/actions/activities";
 import { deleteDayAction } from "@/app/actions/days";
 
@@ -146,25 +147,14 @@ export function ItineraryBoard({
                   Edit day
                 </button>
                 {day.day === lastDay && (
-                  <form
+                  <DangerButton
                     action={deleteDayAction}
-                    onSubmit={(e) => {
-                      if (
-                        !confirm(
-                          `Remove Day ${day.day} and everything on it? This can't be undone.`
-                        )
-                      )
-                        e.preventDefault();
-                    }}
-                  >
-                    <input type="hidden" name="dayNumber" value={day.day} />
-                    <button
-                      type="submit"
-                      className="rounded-md border border-red/30 px-2 py-1 text-xs font-medium text-red/80 hover:bg-red/5"
-                    >
-                      Remove
-                    </button>
-                  </form>
+                    fields={{ dayNumber: day.day }}
+                    confirm={`Remove Day ${day.day} and everything on it? This can't be undone.`}
+                    toast="Day removed"
+                    label="Remove"
+                    className="rounded-md border border-red/30 px-2 py-1 text-xs font-medium text-red/80 hover:bg-red/5"
+                  />
                 )}
               </div>
             </header>
@@ -288,22 +278,14 @@ export function ItineraryBoard({
                             >
                               Edit
                             </button>
-                            <form
+                            <DangerButton
                               action={deleteActivityAction}
-                              onSubmit={(e) => {
-                                if (!confirm("Delete this activity?"))
-                                  e.preventDefault();
-                              }}
-                              className="inline"
-                            >
-                              <input type="hidden" name="id" value={act.id} />
-                              <button
-                                type="submit"
-                                className="font-medium text-red/80 hover:underline"
-                              >
-                                Delete
-                              </button>
-                            </form>
+                              fields={{ id: act.id }}
+                              confirm="Delete this activity?"
+                              toast="Activity deleted"
+                              label="Delete"
+                              className="font-medium text-red/80 hover:underline"
+                            />
                           </>
                         )}
                       </div>

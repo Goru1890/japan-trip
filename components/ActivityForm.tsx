@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { categoryMeta, type Category } from "@/lib/trip";
 import type { StayView } from "@/lib/stays";
+import { useUI } from "@/lib/ui";
 import {
   addActivityAction,
   updateActivityAction,
@@ -54,13 +55,16 @@ export function ActivityForm({
     {}
   );
   const router = useRouter();
+  const { toast } = useUI();
+  const [showAdvanced, setShowAdvanced] = useState(Boolean(initial));
 
   useEffect(() => {
     if (state.ok) {
+      toast(initial ? "Activity saved" : "Activity added");
       onClose();
       router.refresh();
     }
-  }, [state.ok, onClose, router]);
+  }, [state.ok, onClose, router, toast, initial]);
 
   return (
     <form
@@ -98,13 +102,22 @@ export function ActivityForm({
         </select>
       </div>
 
-      <textarea
-        name="description"
-        defaultValue={initial?.description ?? ""}
-        placeholder="Notes / description"
-        rows={2}
-        className={inputCls}
-      />
+      <button
+        type="button"
+        onClick={() => setShowAdvanced((v) => !v)}
+        className="text-xs font-medium text-ink/60 hover:text-ink"
+      >
+        {showAdvanced ? "− Fewer options" : "+ More options (notes, cost, links, secret)"}
+      </button>
+
+      <div className={showAdvanced ? "space-y-2.5" : "hidden"}>
+        <textarea
+          name="description"
+          defaultValue={initial?.description ?? ""}
+          placeholder="Notes / description"
+          rows={2}
+          className={inputCls}
+        />
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <input
@@ -181,6 +194,7 @@ export function ActivityForm({
           />
           🔒 Secret (only you can see it)
         </label>
+      </div>
       </div>
 
       {state.error && <p className="text-sm text-red">{state.error}</p>}

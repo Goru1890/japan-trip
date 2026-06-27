@@ -14,6 +14,7 @@ import {
   type ChecklistFormValues,
 } from "@/components/ChecklistItemForm";
 import { ChecklistSectionForm } from "@/components/ChecklistSectionForm";
+import { DangerButton } from "@/components/DangerButton";
 
 export interface ChecklistItem {
   id: number;
@@ -147,25 +148,14 @@ export function ChecklistBoard({
                         >
                           Rename
                         </button>
-                        <form
+                        <DangerButton
                           action={deleteSectionAction}
-                          onSubmit={(e) => {
-                            if (
-                              !confirm(
-                                `Delete "${section.title}" and its ${secItems.length} item(s)?`
-                              )
-                            )
-                              e.preventDefault();
-                          }}
-                        >
-                          <input type="hidden" name="id" value={section.id} />
-                          <button
-                            type="submit"
-                            className="px-1 text-red/80 hover:underline"
-                          >
-                            Delete
-                          </button>
-                        </form>
+                          fields={{ id: section.id }}
+                          confirm={`Delete "${section.title}" and its ${secItems.length} item(s)?`}
+                          toast="Section deleted"
+                          label="Delete"
+                          className="px-1 text-red/80 hover:underline"
+                        />
                       </div>
                     </div>
                   )}
@@ -214,21 +204,14 @@ export function ChecklistBoard({
                             >
                               Edit
                             </button>
-                            <form
+                            <DangerButton
                               action={deleteChecklistAction}
-                              onSubmit={(e) => {
-                                if (!confirm("Delete this item?"))
-                                  e.preventDefault();
-                              }}
-                            >
-                              <input type="hidden" name="id" value={it.id} />
-                              <button
-                                type="submit"
-                                className="text-red/80 hover:underline"
-                              >
-                                Delete
-                              </button>
-                            </form>
+                              fields={{ id: it.id }}
+                              confirm="Delete this item?"
+                              toast="Item deleted"
+                              label="Delete"
+                              className="text-red/80 hover:underline"
+                            />
                           </span>
                         </li>
                       );

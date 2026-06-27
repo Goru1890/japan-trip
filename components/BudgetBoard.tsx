@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatUsd } from "@/lib/format";
 import { BudgetForm, type BudgetFormValues } from "@/components/BudgetForm";
 import { deleteBudgetAction } from "@/app/actions/budget";
+import { DangerButton } from "@/components/DangerButton";
 
 export type BudgetLineView = BudgetFormValues;
 
@@ -93,20 +94,14 @@ export function BudgetBoard({
                     >
                       Edit
                     </button>
-                    <form
+                    <DangerButton
                       action={deleteBudgetAction}
-                      onSubmit={(e) => {
-                        if (!confirm("Delete this line?")) e.preventDefault();
-                      }}
-                    >
-                      <input type="hidden" name="id" value={line.id} />
-                      <button
-                        type="submit"
-                        className="text-red/80 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </form>
+                      fields={{ id: line.id }}
+                      confirm="Delete this line?"
+                      toast="Line deleted"
+                      label="Delete"
+                      className="text-red/80 hover:underline"
+                    />
                   </span>
                 </div>
               </li>

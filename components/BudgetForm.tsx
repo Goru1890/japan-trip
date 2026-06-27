@@ -4,6 +4,7 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addBudgetAction, updateBudgetAction } from "@/app/actions/budget";
 import type { FormResult } from "@/app/actions/activities";
+import { useUI } from "@/lib/ui";
 
 export interface BudgetFormValues {
   id: number;
@@ -27,13 +28,15 @@ export function BudgetForm({
     {}
   );
   const router = useRouter();
+  const { toast } = useUI();
 
   useEffect(() => {
     if (state.ok) {
+      toast("Saved");
       onClose();
       router.refresh();
     }
-  }, [state.ok, onClose, router]);
+  }, [state.ok, onClose, router, toast]);
 
   return (
     <form

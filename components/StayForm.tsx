@@ -6,6 +6,7 @@ import { addStayAction, updateStayAction } from "@/app/actions/stays";
 import type { FormResult } from "@/app/actions/activities";
 import type { DayOption } from "@/components/ReservationForm";
 import type { StayStatus } from "@/lib/stays";
+import { useUI } from "@/lib/ui";
 
 export interface StayFormValues {
   id: number;
@@ -38,13 +39,15 @@ export function StayForm({
     {}
   );
   const router = useRouter();
+  const { toast } = useUI();
 
   useEffect(() => {
     if (state.ok) {
+      toast(initial ? "Stay saved" : "Stay added");
       onClose();
       router.refresh();
     }
-  }, [state.ok, onClose, router]);
+  }, [state.ok, onClose, router, toast, initial]);
 
   const firstDay = days[0]?.dayNumber ?? 1;
   const lastDay = days[days.length - 1]?.dayNumber ?? 1;

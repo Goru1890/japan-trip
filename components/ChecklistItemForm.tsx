@@ -7,6 +7,7 @@ import {
   updateChecklistAction,
 } from "@/app/actions/checklist";
 import type { FormResult } from "@/app/actions/activities";
+import { useUI } from "@/lib/ui";
 
 export interface ChecklistFormValues {
   id: number;
@@ -38,13 +39,15 @@ export function ChecklistItemForm({
     {}
   );
   const router = useRouter();
+  const { toast } = useUI();
 
   useEffect(() => {
     if (state.ok) {
+      toast(initial ? "Item saved" : "Item added");
       onClose();
       router.refresh();
     }
-  }, [state.ok, onClose, router]);
+  }, [state.ok, onClose, router, toast, initial]);
 
   return (
     <form action={formAction} className="space-y-2">
