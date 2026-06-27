@@ -8,6 +8,7 @@ import {
   tripDays,
   stays,
   budgetLines,
+  checklistItems,
 } from "./schema";
 import type {
   ActivityRow,
@@ -15,6 +16,7 @@ import type {
   TripDayRow,
   StayRow,
   BudgetLineRow,
+  ChecklistItemRow,
 } from "./schema";
 import { tripMeta } from "@/lib/trip";
 
@@ -408,6 +410,66 @@ export async function updateBudgetLine(
 export async function deleteBudgetLine(id: number): Promise<void> {
   const db = getDb();
   await db.delete(budgetLines).where(eq(budgetLines.id, id));
+}
+
+// ---------- checklist ----------
+
+export interface ChecklistInput {
+  kind: string;
+  section: string;
+  label: string;
+}
+
+export async function getChecklist(): Promise<ChecklistItemRow[]> {
+  const db = getDb();
+  return db
+    .select()
+    .from(checklistItems)
+    .orderBy(asc(checklistItems.sortOrder), asc(checklistItems.id));
+}
+
+export async function addChecklistItem(input: ChecklistInput): Promise<void> {
+  const db = getDb();
+  const [{ max }] = await db
+    .select({ max: sql<number>`coalesce(max(${checklistItems.sortOrder}), -1)` })
+    .from(checklistItems);
+  await db.insert(checklistItems).values({
+    kind: input.kind,
+    section: input.section || "General",
+    label: input.label,
+    sortOrder: Number(max ?? -1) + 1,
+  });
+}
+
+export async function updateChecklistItem(
+  id: number,
+  input: ChecklistInput
+): Promise<void> {
+  const db = getDb();
+  await db
+    .update(checklistItems)
+    .set({
+      kind: input.kind,
+      section: input.section || "General",
+      label: input.label,
+    })
+    .where(eq(checklistItems.id, id));
+}
+
+export async function deleteChecklistItem(id: number): Promise<void> {
+  const db = getDb();
+  await db.delete(checklistItems).where(eq(checklistItems.id, id));
+}
+
+export async function setChecklistChecked(
+  id: number,
+  checked: boolean
+): Promise<void> {
+  const db = getDb();
+  await db
+    .update(checklistItems)
+    .set({ checked })
+    .where(eq(checklistItems.id, id));
 }
 
 // ---------- settings ----------

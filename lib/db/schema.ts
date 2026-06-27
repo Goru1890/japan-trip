@@ -100,6 +100,17 @@ export const budgetLines = pgTable("budget_lines", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
+// Prep & packing checklist — shared items with a shared checked state.
+export const checklistItems = pgTable("checklist_items", {
+  id: serial("id").primaryKey(),
+  /** prep | packing */
+  kind: text("kind").notNull().default("packing"),
+  section: text("section").notNull().default("General"),
+  label: text("label").notNull(),
+  checked: boolean("checked").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
 // Simple shared key/value (e.g. the trip start date, title, travelers).
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
@@ -109,6 +120,7 @@ export const settings = pgTable("settings", {
 export type TripDayRow = typeof tripDays.$inferSelect;
 export type StayRow = typeof stays.$inferSelect;
 export type BudgetLineRow = typeof budgetLines.$inferSelect;
+export type ChecklistItemRow = typeof checklistItems.$inferSelect;
 export type ActivityRow = typeof activities.$inferSelect;
 export type ReservationRow = typeof reservations.$inferSelect;
 export type UserRow = typeof users.$inferSelect;
