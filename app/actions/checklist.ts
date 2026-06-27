@@ -7,9 +7,17 @@ import {
   updateChecklistItem,
   deleteChecklistItem,
   setChecklistChecked,
+  addSection,
+  renameSection,
+  deleteSection,
+  moveSection,
   type ChecklistInput,
 } from "@/lib/db/queries";
 import type { FormResult } from "./activities";
+
+function message(e: unknown): string {
+  return e instanceof Error ? e.message : "Something went wrong.";
+}
 
 function parse(fd: FormData): ChecklistInput {
   return {
@@ -62,5 +70,55 @@ export async function setCheckedAction(
 ): Promise<void> {
   await requireSession();
   await setChecklistChecked(id, checked);
+  revalidate();
+}
+
+// ---- sections ----
+
+export async function addSectionAction(
+  _prev: FormResult,
+  fd: FormData
+): Promise<FormResult> {
+  await requireSession();
+  const kind = String(fd.get("kind") ?? "packing");
+  const title = String(fd.get("title") ?? "").trim();
+  try {
+    await addSection(kind, title);
+  } catch (e) {
+    return { error: message(e) };
+  }
+  revalidate();
+  return { ok: true };
+}
+
+export async function renameSectionAction(
+  _prev: FormResult,
+  fd: FormData
+): Promise<FormResult> {
+  await requireSession();
+  const id = Number(fd.get("id"));
+  const title = String(fd.get("title") ?? "").trim();
+  if (!id) return { error: "Missing section id." };
+  try {
+    await renameSection(id, title);
+  } catch (e) {
+    return { error: message(e) };
+  }
+  revalidate();
+  return { ok: true };
+}
+
+export async function deleteSectionAction(fd: FormData): Promise<void> {
+  await requireSession();
+  const id = Number(fd.get("id"));
+  if (id) await deleteSection(id);
+  revalidate();
+}
+
+export async function moveSectionAction(fd: FormData): Promise<void> {
+  await requireSession();
+  const id = Number(fd.get("id"));
+  const dir = String(fd.get("dir")) === "up" ? "up" : "down";
+  if (id) await moveSection(id, dir);
   revalidate();
 }

@@ -100,7 +100,17 @@ export const budgetLines = pgTable("budget_lines", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
+// First-class checklist sections (so they can be created empty, renamed, reordered).
+export const checklistSections = pgTable("checklist_sections", {
+  id: serial("id").primaryKey(),
+  /** prep | packing */
+  kind: text("kind").notNull().default("packing"),
+  title: text("title").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
 // Prep & packing checklist — shared items with a shared checked state.
+// Items link to a section by (kind, section title).
 export const checklistItems = pgTable("checklist_items", {
   id: serial("id").primaryKey(),
   /** prep | packing */
@@ -120,6 +130,7 @@ export const settings = pgTable("settings", {
 export type TripDayRow = typeof tripDays.$inferSelect;
 export type StayRow = typeof stays.$inferSelect;
 export type BudgetLineRow = typeof budgetLines.$inferSelect;
+export type ChecklistSectionRow = typeof checklistSections.$inferSelect;
 export type ChecklistItemRow = typeof checklistItems.$inferSelect;
 export type ActivityRow = typeof activities.$inferSelect;
 export type ReservationRow = typeof reservations.$inferSelect;

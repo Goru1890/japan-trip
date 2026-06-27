@@ -21,11 +21,15 @@ const inputCls =
 export function ChecklistItemForm({
   kind,
   initial,
+  lockedSection,
   sections,
   onClose,
 }: {
   kind: string;
   initial?: ChecklistFormValues;
+  /** When adding inside a section, the section is fixed (no picker). */
+  lockedSection?: string;
+  /** Section titles in this kind (for the move-to picker when editing). */
   sections: string[];
   onClose: () => void;
 }) {
@@ -43,51 +47,50 @@ export function ChecklistItemForm({
   }, [state.ok, onClose, router]);
 
   return (
-    <form
-      action={formAction}
-      className="space-y-2 rounded-md border border-ink/15 bg-paper/60 p-3"
-    >
+    <form action={formAction} className="space-y-2">
       {initial && <input type="hidden" name="id" value={initial.id} />}
       <input type="hidden" name="kind" value={initial?.kind ?? kind} />
 
-      <input
-        name="label"
-        defaultValue={initial?.label ?? ""}
-        placeholder="Item (e.g. Passport)"
-        autoFocus
-        className={inputCls}
-      />
-      <input
-        name="section"
-        defaultValue={initial?.section ?? ""}
-        list="checklist-sections"
-        placeholder="Section (e.g. Documents)"
-        className={inputCls}
-      />
-      <datalist id="checklist-sections">
-        {sections.map((s) => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
-
-      {state.error && <p className="text-sm text-red">{state.error}</p>}
-
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          name="label"
+          defaultValue={initial?.label ?? ""}
+          placeholder="Item (e.g. Passport)"
+          autoFocus
+          className={`${inputCls} min-w-0 flex-1`}
+        />
+        {lockedSection != null ? (
+          <input type="hidden" name="section" value={lockedSection} />
+        ) : (
+          <select
+            name="section"
+            defaultValue={initial?.section ?? sections[0] ?? "General"}
+            className={`${inputCls} w-auto`}
+          >
+            {sections.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           type="submit"
           disabled={pending}
           className="rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-paper hover:bg-ink/90 disabled:opacity-50"
         >
-          {pending ? "Saving…" : initial ? "Save" : "Add"}
+          {pending ? "…" : initial ? "Save" : "Add"}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink hover:bg-ink/5"
+          className="rounded-md border border-ink/15 px-2.5 py-1.5 text-sm font-medium text-ink hover:bg-ink/5"
         >
           Cancel
         </button>
       </div>
+
+      {state.error && <p className="text-sm text-red">{state.error}</p>}
     </form>
   );
 }

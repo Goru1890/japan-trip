@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq, or, sql } from "drizzle-orm";
+import { and, asc, eq, or, sql } from "drizzle-orm";
 import { getDb } from "./index";
 import {
   activities,
@@ -9,6 +9,7 @@ import {
   stays,
   budgetLines,
   checklistItems,
+  checklistSections,
 } from "./schema";
 import type {
   ActivityRow,
@@ -17,6 +18,7 @@ import type {
   StayRow,
   BudgetLineRow,
   ChecklistItemRow,
+  ChecklistSectionRow,
 } from "./schema";
 import { tripMeta } from "@/lib/trip";
 
@@ -470,6 +472,119 @@ export async function setChecklistChecked(
     .update(checklistItems)
     .set({ checked })
     .where(eq(checklistItems.id, id));
+}
+
+// ---------- checklist sections ----------
+
+export async function getChecklistSections(): Promise<ChecklistSectionRow[]> {
+  const db = getDb();
+  return db
+    .select()
+    .from(checklistSections)
+    .orderBy(
+      asc(checklistSections.kind),
+      asc(checklistSections.sortOrder),
+      asc(checklistSections.id)
+    );
+}
+
+export async function addSection(kind: string, title: string): Promise<void> {
+  const db = getDb();
+  const t = title.trim();
+  if (!t) throw new Error("Enter a section name.");
+  const existing = await db
+    .select()
+    .from(checklistSections)
+    .where(and(eq(checklistSections.kind, kind), eq(checklistSections.title, t)))
+    .limit(1);
+  if (existing.length) throw new Error("That section already exists.");
+  const [{ max }] = await db
+    .select({
+      max: sql<number>`coalesce(max(${checklistSections.sortOrder}), -1)`,
+    })
+    .from(checklistSections)
+    .where(eq(checklistSections.kind, kind));
+  await db
+    .insert(checklistSections)
+    .values({ kind, title: t, sortOrder: Number(max ?? -1) + 1 });
+}
+
+export async function renameSection(id: number, title: string): Promise<void> {
+  const db = getDb();
+  const t = title.trim();
+  if (!t) throw new Error("Enter a section name.");
+  const [sec] = await db
+    .select()
+    .from(checklistSections)
+    .where(eq(checklistSections.id, id))
+    .limit(1);
+  if (!sec) return;
+  const dup = await db
+    .select()
+    .from(checklistSections)
+    .where(and(eq(checklistSections.kind, sec.kind), eq(checklistSections.title, t)))
+    .limit(1);
+  if (dup.length && dup[0].id !== id) {
+    throw new Error("That section already exists.");
+  }
+  // Keep items pointing at the renamed section.
+  await db
+    .update(checklistItems)
+    .set({ section: t })
+    .where(
+      and(eq(checklistItems.kind, sec.kind), eq(checklistItems.section, sec.title))
+    );
+  await db
+    .update(checklistSections)
+    .set({ title: t })
+    .where(eq(checklistSections.id, id));
+}
+
+export async function deleteSection(id: number): Promise<void> {
+  const db = getDb();
+  const [sec] = await db
+    .select()
+    .from(checklistSections)
+    .where(eq(checklistSections.id, id))
+    .limit(1);
+  if (!sec) return;
+  await db
+    .delete(checklistItems)
+    .where(
+      and(eq(checklistItems.kind, sec.kind), eq(checklistItems.section, sec.title))
+    );
+  await db.delete(checklistSections).where(eq(checklistSections.id, id));
+}
+
+export async function moveSection(
+  id: number,
+  dir: "up" | "down"
+): Promise<void> {
+  const db = getDb();
+  const [sec] = await db
+    .select()
+    .from(checklistSections)
+    .where(eq(checklistSections.id, id))
+    .limit(1);
+  if (!sec) return;
+  const siblings = await db
+    .select()
+    .from(checklistSections)
+    .where(eq(checklistSections.kind, sec.kind))
+    .orderBy(asc(checklistSections.sortOrder), asc(checklistSections.id));
+  const idx = siblings.findIndex((s) => s.id === id);
+  const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= siblings.length) return;
+  const a = siblings[idx];
+  const b = siblings[swapIdx];
+  await db
+    .update(checklistSections)
+    .set({ sortOrder: b.sortOrder })
+    .where(eq(checklistSections.id, a.id));
+  await db
+    .update(checklistSections)
+    .set({ sortOrder: a.sortOrder })
+    .where(eq(checklistSections.id, b.id));
 }
 
 // ---------- settings ----------

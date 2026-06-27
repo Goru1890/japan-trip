@@ -8,6 +8,7 @@ import {
   stays as staysTable,
   budgetLines,
   checklistItems,
+  checklistSections,
 } from "../lib/db/schema";
 import { days, tripMeta, stays, budget, packing, prep } from "../lib/trip";
 
@@ -128,6 +129,27 @@ async function main() {
     console.log(`✓ seeded ${budget.length} budget lines`);
   } else {
     console.log("• budget already present — skipped");
+  }
+
+  // Checklist sections.
+  const existingSections = await db
+    .select({ id: checklistSections.id })
+    .from(checklistSections)
+    .limit(1);
+  if (existingSections.length === 0) {
+    const secRows: { kind: string; title: string; sortOrder: number }[] = [];
+    for (const [kind, sections] of [
+      ["prep", prep],
+      ["packing", packing],
+    ] as const) {
+      sections.forEach((s, i) =>
+        secRows.push({ kind, title: s.title, sortOrder: i })
+      );
+    }
+    await db.insert(checklistSections).values(secRows);
+    console.log(`✓ seeded ${secRows.length} checklist sections`);
+  } else {
+    console.log("• checklist sections already present — skipped");
   }
 
   // Checklist (prep + packing).

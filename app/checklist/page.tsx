@@ -1,13 +1,26 @@
-import { getChecklist } from "@/lib/db/queries";
+import { getChecklist, getChecklistSections } from "@/lib/db/queries";
 import { Icon } from "@/components/Icon";
-import { ChecklistBoard, type ChecklistItem } from "@/components/ChecklistBoard";
+import {
+  ChecklistBoard,
+  type ChecklistItem,
+  type ChecklistSection,
+} from "@/components/ChecklistBoard";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Checklist · Japan Trip" };
 
 export default async function ChecklistPage() {
-  const rows = await getChecklist();
-  const items: ChecklistItem[] = rows.map((r) => ({
+  const [sectionRows, itemRows] = await Promise.all([
+    getChecklistSections(),
+    getChecklist(),
+  ]);
+
+  const sections: ChecklistSection[] = sectionRows.map((s) => ({
+    id: s.id,
+    kind: s.kind,
+    title: s.title,
+  }));
+  const items: ChecklistItem[] = itemRows.map((r) => ({
     id: r.id,
     kind: r.kind,
     section: r.section,
@@ -24,13 +37,13 @@ export default async function ChecklistPage() {
             Prep &amp; packing
           </h1>
           <p className="text-sm text-ink/60">
-            Shared between you and Rosalie — add, tick, or remove items. Ticks
-            save for both of you.
+            Shared with Rosalie. Add sections, add items inside them, tick as you
+            go.
           </p>
         </div>
       </div>
 
-      <ChecklistBoard items={items} />
+      <ChecklistBoard sections={sections} items={items} />
     </div>
   );
 }
