@@ -1,6 +1,12 @@
 import { categoryMeta, type Category } from "./trip";
-import { mapsUrl, bookingUrl } from "./links";
-import { stayForDayIn, stayQuery, type StayView } from "./stays";
+import { mapsUrl } from "./links";
+import {
+  stayForDayIn,
+  stayHotelHref,
+  stayHotelLabel,
+  stayMapHref,
+  type StayView,
+} from "./stays";
 
 // Pure helpers for the "what now / what next" view. Trip time is reckoned in
 // Japan local time (Asia/Tokyo). The view merges four kinds of "steps" —
@@ -158,7 +164,7 @@ export function buildSteps(
         icon: d.dayNumber === lastDay && isAirport ? "✈️" : "🚆",
         action: d.dayNumber === lastDay ? "Head out —" : "Travel —",
         title: d.transport,
-        mapsUrl: arriving ? mapsUrl(stayQuery(stay!)) : undefined,
+        mapsUrl: arriving ? stayMapHref(stay!) : undefined,
       });
     }
 
@@ -194,9 +200,9 @@ export function buildSteps(
         icon: "🛏️",
         action: arrival ? "Check in at" : "Back to your hotel —",
         title: `${stay.area} · ${stay.city}`,
-        mapsUrl: mapsUrl(stayQuery(stay)),
-        linkUrl: bookingUrl(stayQuery(stay)),
-        linkLabel: "Find hotels",
+        mapsUrl: stayMapHref(stay),
+        linkUrl: stayHotelHref(stay),
+        linkLabel: stayHotelLabel(stay),
       });
     }
   }

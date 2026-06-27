@@ -15,6 +15,8 @@ export interface StayFormValues {
   toDay: number;
   note: string;
   status: StayStatus;
+  url: string | null;
+  mapQuery: string | null;
 }
 
 const STATUSES: StayStatus[] = ["planned", "maybe", "booked", "paid"];
@@ -122,6 +124,28 @@ export function StayForm({
         rows={2}
         className={inputCls}
       />
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="text-xs text-ink/55">
+          🏨 Hotel link (optional)
+          <input
+            name="url"
+            type="url"
+            defaultValue={initial?.url ?? ""}
+            placeholder="https://… the booked hotel"
+            className={inputCls}
+          />
+        </label>
+        <label className="text-xs text-ink/55">
+          📍 Exact map place / address (optional)
+          <input
+            name="mapQuery"
+            defaultValue={initial?.mapQuery ?? ""}
+            placeholder="Overrides the area search"
+            className={inputCls}
+          />
+        </label>
+      </div>
 
       {state.error && <p className="text-sm text-red">{state.error}</p>}
 

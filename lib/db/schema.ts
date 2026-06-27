@@ -84,6 +84,10 @@ export const stays = pgTable("stays", {
   toDay: integer("to_day").notNull(),
   note: text("note").notNull().default(""),
   status: text("status").notNull().default("planned"),
+  /** Optional specific hotel/booking link; falls back to a booking search. */
+  url: text("url"),
+  /** Optional exact map place/address; falls back to "area, city". */
+  mapQuery: text("map_query"),
   sortOrder: integer("sort_order").notNull().default(0),
 });
 

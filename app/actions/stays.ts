@@ -5,6 +5,11 @@ import { requireSession } from "@/lib/auth";
 import { addStay, updateStay, deleteStay, type StayInput } from "@/lib/db/queries";
 import type { FormResult } from "./activities";
 
+function field(v: FormDataEntryValue | null): string | null {
+  const s = String(v ?? "").trim();
+  return s ? s : null;
+}
+
 function parse(fd: FormData): StayInput {
   const from = Number(fd.get("fromDay"));
   const to = Number(fd.get("toDay"));
@@ -15,6 +20,8 @@ function parse(fd: FormData): StayInput {
     toDay: to >= from ? to : from,
     note: String(fd.get("note") ?? "").trim(),
     status: String(fd.get("status") ?? "planned"),
+    url: field(fd.get("url")),
+    mapQuery: field(fd.get("mapQuery")),
   };
 }
 

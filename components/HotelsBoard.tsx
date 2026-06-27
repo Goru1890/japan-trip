@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { bookingUrl, mapsUrl } from "@/lib/links";
-import { stayNights, stayQuery, type StayView } from "@/lib/stays";
+import {
+  stayNights,
+  stayHotelHref,
+  stayHotelLabel,
+  stayMapHref,
+  type StayView,
+} from "@/lib/stays";
 import { StatusBadge } from "@/components/Badge";
 import { Icon } from "@/components/Icon";
 import { StayForm } from "@/components/StayForm";
@@ -80,15 +85,15 @@ export function HotelsBoard({
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <a
-                  href={bookingUrl(stayQuery(stay))}
+                  href={stayHotelHref(stay)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-paper hover:bg-ink/90"
                 >
-                  🏨 Find hotels ↗
+                  🏨 {stayHotelLabel(stay)} ↗
                 </a>
                 <a
-                  href={mapsUrl(stayQuery(stay))}
+                  href={stayMapHref(stay)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink hover:bg-ink/5"

@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { categoryMeta, type Category } from "@/lib/trip";
 import { dateForDay } from "@/lib/format";
-import { mapsUrl, bookingUrl } from "@/lib/links";
+import { mapsUrl } from "@/lib/links";
 import {
   stayForDayIn,
   stayNights,
-  stayQuery,
+  stayHotelHref,
+  stayHotelLabel,
+  stayMapHref,
   type StayView,
 } from "@/lib/stays";
 import { useAudio } from "@/lib/audio";
@@ -255,7 +257,7 @@ export function ItineraryBoard({
                         )}
                         {linkedStay && (
                           <a
-                            href={mapsUrl(stayQuery(linkedStay))}
+                            href={stayMapHref(linkedStay)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 rounded border border-sky/40 bg-sky/10 px-1.5 py-0.5 font-medium text-ink hover:bg-sky/20"
@@ -345,15 +347,15 @@ export function ItineraryBoard({
                 </div>
                 <div className="flex items-center gap-3 text-xs font-medium">
                   <a
-                    href={bookingUrl(stayQuery(stay))}
+                    href={stayHotelHref(stay)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-red hover:underline"
                   >
-                    🏨 Hotels ↗
+                    🏨 {stayHotelLabel(stay)} ↗
                   </a>
                   <a
-                    href={mapsUrl(stayQuery(stay))}
+                    href={stayMapHref(stay)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-red hover:underline"

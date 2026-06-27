@@ -40,6 +40,8 @@ export default async function ItineraryPage() {
     toDay: s.toDay,
     note: s.note,
     status: s.status as StayStatus,
+    url: s.url,
+    mapQuery: s.mapQuery,
   }));
 
   const reservations: ReservationLite[] = resvRows.map((r) => ({

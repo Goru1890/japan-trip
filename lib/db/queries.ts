@@ -312,6 +312,8 @@ export interface StayInput {
   toDay: number;
   note?: string;
   status?: string;
+  url?: string | null;
+  mapQuery?: string | null;
 }
 
 export async function getStays(): Promise<StayRow[]> {
@@ -331,6 +333,8 @@ export async function addStay(input: StayInput): Promise<void> {
     toDay: input.toDay,
     note: input.note ?? "",
     status: input.status ?? "planned",
+    url: input.url ?? null,
+    mapQuery: input.mapQuery ?? null,
     sortOrder: Number(max ?? -1) + 1,
   });
 }
@@ -346,6 +350,8 @@ export async function updateStay(id: number, input: StayInput): Promise<void> {
       toDay: input.toDay,
       note: input.note ?? "",
       status: input.status ?? "planned",
+      url: input.url ?? null,
+      mapQuery: input.mapQuery ?? null,
     })
     .where(eq(stays.id, id));
 }

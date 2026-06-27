@@ -17,6 +17,8 @@ export default async function HotelsPage() {
     toDay: s.toDay,
     note: s.note,
     status: s.status as StayStatus,
+    url: s.url,
+    mapQuery: s.mapQuery,
   }));
   const dayOptions = dayRows.map((d) => ({ dayNumber: d.dayNumber, city: d.city }));
   const totalNights = stays.reduce((n, s) => n + stayNights(s), 0);

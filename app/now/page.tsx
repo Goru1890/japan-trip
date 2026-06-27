@@ -136,6 +136,8 @@ export default async function NowPage() {
     toDay: s.toDay,
     note: s.note,
     status: s.status as StayStatus,
+    url: s.url,
+    mapQuery: s.mapQuery,
   }));
 
   const dayMetas: DayMeta[] = dayRows.map((d) => ({
