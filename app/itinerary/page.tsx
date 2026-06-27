@@ -86,7 +86,7 @@ export default async function ItineraryPage() {
     <div className="space-y-5">
       <section className="relative h-36 overflow-hidden rounded-lg shadow-soft sm:h-44">
         <Image
-          src="/assets/images/card-tokyo-itinerary.png"
+          src="/assets/images/card-tokyo-itinerary.webp"
           alt="Illustrated Tokyo itinerary scene"
           fill
           priority

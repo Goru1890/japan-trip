@@ -140,7 +140,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="relative h-60 overflow-hidden rounded-lg shadow-soft sm:h-80">
         <Image
-          src="/assets/images/hero-tokyo-sakura.png"
+          src="/assets/images/hero-tokyo-sakura.webp"
           alt="Illustrated Tokyo street under cherry blossoms"
           fill
           priority

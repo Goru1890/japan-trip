@@ -27,7 +27,7 @@ export default async function HotelsPage() {
     <div className="space-y-6">
       <section className="relative h-40 overflow-hidden rounded-lg shadow-soft sm:h-52">
         <Image
-          src="/assets/images/card-ryokan-onsen.png"
+          src="/assets/images/card-ryokan-onsen.webp"
           alt="Illustrated ryokan with an onsen bath"
           fill
           priority

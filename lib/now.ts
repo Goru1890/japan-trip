@@ -207,18 +207,28 @@ export function buildSteps(
     }
   }
 
-  // 4) Real bookings at their actual time.
+  // 4) Real bookings. Placed by their assigned day (preferred) and/or time;
+  //    a day-assigned but timeless booking still shows (at midday), and a
+  //    date is clamped into the trip so it never falls off the feed.
   for (const r of reservations) {
-    if (!r.startsAt) continue;
-    const { dateIso, minutes } = tokyoNow(r.startsAt);
-    const dayNumber = daysBetween(startIso, dateIso) + 1;
+    let day: number | null = r.dayNumber ?? null;
+    let minutes = 12 * 60;
+    let timeLabel: string | null = null;
+    if (r.startsAt) {
+      const t = tokyoNow(r.startsAt);
+      minutes = t.minutes;
+      timeLabel = minutesToLabel(minutes);
+      if (day == null) day = daysBetween(startIso, t.dateIso) + 1;
+    }
+    if (day == null) continue; // no day and no time → nothing to anchor it to
+    day = Math.max(1, Math.min(lastDay, day));
     steps.push({
       key: `resv-${r.id}`,
       kind: "booking",
-      dayNumber,
-      city: cityOf(dayNumber),
+      dayNumber: day,
+      city: cityOf(day),
       minutes,
-      time: minutesToLabel(minutes),
+      time: timeLabel,
       icon: TYPE_EMOJI[r.type] ?? "📌",
       action: `${r.type[0].toUpperCase()}${r.type.slice(1)} —`,
       title: r.title,

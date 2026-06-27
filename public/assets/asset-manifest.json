@@ -1,9 +1,8 @@
 {
   "images": {
-    "heroTokyoSakura": "/assets/images/hero-tokyo-sakura.png",
-    "ryokanOnsenCard": "/assets/images/card-ryokan-onsen.png",
-    "tokyoItineraryCard": "/assets/images/card-tokyo-itinerary.png",
-    "travelPattern": "/assets/images/pattern-japan-travel.png",
+    "heroTokyoSakura": "/assets/images/hero-tokyo-sakura.webp",
+    "ryokanOnsenCard": "/assets/images/card-ryokan-onsen.webp",
+    "tokyoItineraryCard": "/assets/images/card-tokyo-itinerary.webp",
     "mascotSuitcaseDaruma": "/assets/images/mascot-suitcase-daruma.svg",
     "icons": {
       "onsen": "/assets/images/icon-onsen.svg",
