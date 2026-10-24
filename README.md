@@ -79,7 +79,8 @@ The live site reads from the database, not from `lib/trip.ts`. After editing the
 plan in `lib/trip.ts`, load it into the production DB:
 
 ```bash
-vercel env pull .env.local      # gets the prod DATABASE_URL
+# put the prod DATABASE_URL in .env (Vercel → Settings → Environment Variables)
+npm run db:reseed:check   # dry run: shows what will be replaced / kept
 npm run db:reseed
 ```
 

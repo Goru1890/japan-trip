@@ -41,6 +41,19 @@ async function main() {
   const shift = daysBetween(newStart, oldStart);
   console.log(`start date ${oldStart} → ${newStart}  (day shift ${shift >= 0 ? "+" : ""}${shift})`);
 
+  if (process.argv.includes("--dry-run")) {
+    const acts = await db.select().from(activities);
+    const seed = acts.filter((a) => a.ownerId == null);
+    const mine = acts.filter((a) => a.ownerId != null);
+    console.log(`\nWould REPLACE ${seed.length} seed activities, all days and all stays.`);
+    console.log(`Would KEEP ${mine.length} hand-added activities (re-dated):`);
+    for (const a of mine.sort((x, y) => x.dayNumber - y.dayNumber)) {
+      console.log(`  old day ${a.dayNumber} → new day ${a.dayNumber + shift}  ${a.time ?? ""}  ${a.title}`);
+    }
+    console.log("\nNothing changed. Run without --dry-run to apply.");
+    return;
+  }
+
   await db.transaction(async (tx) => {
     // 1) Days + seed activities + stays: wipe and reload from lib/trip.ts.
     await tx.delete(activities).where(isNull(activities.ownerId));
