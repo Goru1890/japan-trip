@@ -75,6 +75,11 @@ becomes your password.** Tell Rosalie to do the same with `rosalie`.
 
 ## Replan the trip (reload the itinerary)
 
+> ⚠️ The live plan is edited in the app and lives only in the database — it is
+> richer than `lib/trip.ts`. `db:reseed` refuses to run if it would delete
+> activities that aren't in `lib/trip.ts` (override with `--force`). For small
+> changes, edit in the app or run targeted SQL in the Neon SQL Editor.
+
 The live site reads from the database, not from `lib/trip.ts`. After editing the
 plan in `lib/trip.ts`, load it into the production DB:
 
