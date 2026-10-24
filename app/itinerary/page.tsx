@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { getSession } from "@/lib/auth";
 import {
   getStartDate,
@@ -16,6 +15,8 @@ import {
   type BoardDay,
 } from "@/components/ItineraryBoard";
 import { type ReservationLite } from "@/components/ActivityForm";
+import { dateForDay } from "@/lib/format";
+import { timeToMinutes } from "@/lib/now";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Itinerary · Japan Trip" };
@@ -72,6 +73,14 @@ export default async function ItineraryPage() {
     });
   }
 
+  // Within a day, order by time (hand-added stops land where they belong).
+  for (const list of Object.values(activitiesByDay)) {
+    list.sort(
+      (a, b) =>
+        (timeToMinutes(a.time) ?? 12 * 60) - (timeToMinutes(b.time) ?? 12 * 60)
+    );
+  }
+
   const boardDays: BoardDay[] = dayRows.map((d) => ({
     id: d.id,
     day: d.dayNumber,
@@ -82,27 +91,19 @@ export default async function ItineraryPage() {
     restDay: d.restDay,
   }));
 
+  const first = dateForDay(startDate, 1);
+  const last = dateForDay(startDate, boardDays.length);
+
   return (
     <div className="space-y-5">
-      <section className="relative h-36 overflow-hidden rounded-lg shadow-soft sm:h-44">
-        <Image
-          src="/assets/images/card-tokyo-itinerary.webp"
-          alt="Illustrated Tokyo itinerary scene"
-          fill
-          priority
-          sizes="(max-width: 1024px) 100vw, 1024px"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-5">
-          <h1 className="text-2xl font-bold tracking-tight text-paper drop-shadow sm:text-3xl">
-            Day by day
-          </h1>
-          <p className="text-sm text-paper/90">
-            Add, edit, or mark stops secret · tap an interest to filter
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Itinerary</h1>
+        {first && last && (
+          <p className="text-sm text-ink/60">
+            {first} → {last} · {boardDays.length} days
           </p>
-        </div>
-      </section>
+        )}
+      </div>
 
       <ItineraryBoard
         startDate={startDate}

@@ -3,7 +3,7 @@
 A **private, two-person** Japan trip planner for Joaquin & Rosalie — built with
 **Next.js 15**, deployed on **Vercel** with **Postgres**. Login-gated, collaboratively
 editable, with per-person *secret* activities, a live "what now" view, and a place
-to keep your real bookings. Seeded with a curated ~2-week, Tokyo-anchored route.
+to keep your real bookings. Currently holds the replanned 7-day Kansai route (Oct 26 – Nov 1, 2026).
 
 ## Features
 
@@ -72,6 +72,21 @@ becomes your password.** Tell Rosalie to do the same with `rosalie`.
   only return rows that are non-secret **or** owned by you ([`lib/db/queries.ts`](lib/db/queries.ts)).
 - **Data model:** `users`, `activities`, `reservations`, `settings` (Drizzle ORM,
   [`lib/db/schema.ts`](lib/db/schema.ts)). The start date is a shared setting.
+
+## Replan the trip (reload the itinerary)
+
+The live site reads from the database, not from `lib/trip.ts`. After editing the
+plan in `lib/trip.ts`, load it into the production DB:
+
+```bash
+vercel env pull .env.local      # gets the prod DATABASE_URL
+npm run db:reseed
+```
+
+`db:reseed` replaces the days, the seed activities and the stays, and updates the
+start date. It **keeps** your logins, bookings, checklist, budget, and any activity
+you added by hand (re-dated to the same calendar day; anything that no longer fits
+is parked on the nearest day and listed in the output).
 
 ## Make it yours
 

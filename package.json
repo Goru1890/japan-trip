@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
+    "db:reseed": "tsx scripts/reseed-itinerary.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

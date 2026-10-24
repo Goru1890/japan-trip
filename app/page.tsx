@@ -1,20 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { tripMeta, categoryMeta, type Category } from "@/lib/trip";
-import { stayNights } from "@/lib/stays";
+import { tripMeta } from "@/lib/trip";
 import { StartDateControl } from "@/components/StartDateControl";
-import { CategoryDot } from "@/components/CategoryBadge";
 import { Icon, type IconName } from "@/components/Icon";
 import { TripSettingsForm } from "@/components/TripSettingsForm";
 import { getSession } from "@/lib/auth";
-import { tokyoNow, daysBetween } from "@/lib/now";
+import { tokyoNow, daysBetween, timeToMinutes } from "@/lib/now";
+import { dateForDay } from "@/lib/format";
 import {
   getStartDate,
   getDays,
   getStays,
   getSettings,
-  getChecklist,
-  getVisibleReservations,
+  getVisibleActivities,
 } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -29,38 +27,6 @@ function routeSegments(days: RouteDay[]) {
     else segments.push({ city: d.city, from: d.dayNumber, to: d.dayNumber });
   }
   return segments;
-}
-
-function ReadyRow({
-  icon,
-  label,
-  value,
-  pct,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  pct: number;
-}) {
-  return (
-    <li>
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-ink/80">
-          <span className="mr-1.5" aria-hidden>
-            {icon}
-          </span>
-          {label}
-        </span>
-        <span className="font-medium tabular-nums text-ink">{value}</span>
-      </div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
-        <div
-          className="h-full rounded-full bg-matcha transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </li>
-  );
 }
 
 const quickLinks: { href: string; label: string; desc: string; icon: IconName }[] =
@@ -81,67 +47,47 @@ const quickLinks: { href: string; label: string; desc: string; icon: IconName }[
 export default async function HomePage() {
   const session = await getSession();
   const uid = session?.uid ?? -1;
-  const [startDate, dayRows, stayRows, settings, checklistRows, resvRows] =
-    await Promise.all([
-      getStartDate(),
-      getDays(),
-      getStays(),
-      getSettings(),
-      getChecklist(),
-      getVisibleReservations(uid),
-    ]);
+  const [startDate, dayRows, stayRows, settings, acts] = await Promise.all([
+    getStartDate(),
+    getDays(),
+    getStays(),
+    getSettings(),
+    getVisibleActivities(uid),
+  ]);
 
-  // Trip readiness
   const totalDays = dayRows.length;
   const today = tokyoNow(new Date()).dateIso;
   const dayIndex = daysBetween(startDate, today) + 1;
+  const todayRow = dayRows.find((d) => d.dayNumber === dayIndex) ?? null;
+  const todayActs = acts
+    .filter((a) => a.dayNumber === dayIndex)
+    .sort((a, b) => (timeToMinutes(a.time) ?? 720) - (timeToMinutes(b.time) ?? 720));
+
   let countdown: string;
   if (dayIndex < 1) {
     const d = daysBetween(today, startDate);
-    countdown = `In ${d} day${d === 1 ? "" : "s"}`;
+    countdown = d === 1 ? "Tomorrow" : `In ${d} days`;
   } else if (dayIndex <= totalDays) {
     countdown = `Day ${dayIndex} of ${totalDays}`;
   } else {
     countdown = "Trip complete 🎉";
   }
 
-  // Hotels measured as booked nights / total trip nights (fixed denominator),
-  // so adding a *tentative* stay never lowers readiness — only booking one raises it.
-  const bookedNights = stayRows
-    .filter((s) => s.status === "booked" || s.status === "paid")
-    .reduce((n, s) => n + stayNights(s), 0);
-  const tripNights = Math.max(totalDays - 1, 1);
-  const hotelsPct = Math.min(100, Math.round((bookedNights / tripNights) * 100));
-  const checkDone = checklistRows.filter((c) => c.checked).length;
-  const checkPct = checklistRows.length
-    ? Math.round((checkDone / checklistRows.length) * 100)
-    : 0;
-  const bookings = resvRows.length;
-  const readiness = Math.round((hotelsPct + checkPct) / 2);
   const title = settings.title || tripMeta.title;
   const subtitle = settings.subtitle || tripMeta.subtitle;
   const seasonNote = settings.season_note || tripMeta.seasonNote;
   const travelers = Number(settings.travelers || "1") || 1;
   const segments = routeSegments(dayRows);
-  const cities = new Set(
-    dayRows.map((d) => d.city).filter((c) => c !== "Departure")
-  );
-  const nights = stayRows.reduce((n, s) => n + stayNights(s), 0);
-
-  const stats = [
-    { label: "Days", value: dayRows.length },
-    { label: "Stops", value: cities.size },
-    { label: "Nights", value: nights },
-    { label: "Interests", value: Object.keys(categoryMeta).length },
-  ];
+  const first = dateForDay(startDate, 1);
+  const last = dateForDay(startDate, totalDays);
 
   return (
     <div className="space-y-7">
       {/* Hero */}
-      <section className="relative h-60 overflow-hidden rounded-lg shadow-soft sm:h-80">
+      <section className="relative h-52 overflow-hidden rounded-lg shadow-soft sm:h-72">
         <Image
           src="/assets/images/hero-tokyo-sakura.webp"
-          alt="Illustrated Tokyo street under cherry blossoms"
+          alt=""
           fill
           priority
           sizes="(max-width: 1024px) 100vw, 1024px"
@@ -150,7 +96,7 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/25 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-widest text-paper/85">
-            日本 · Your trip
+            {first && last ? `${first} → ${last}` : "日本"}
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-paper drop-shadow sm:text-5xl">
             {title}
@@ -161,72 +107,40 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="space-y-2">
-        <p className="text-sm text-ink/70">{seasonNote}</p>
-        <TripSettingsForm
-          initial={{ title, subtitle, travelers, seasonNote }}
-        />
-      </div>
-
-      {/* Trip readiness */}
-      <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-soft">
+      {/* Today */}
+      <section className="rounded-lg border border-red/30 bg-white p-5 shadow-soft">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-semibold text-ink">Trip readiness</h2>
+          <h2 className="font-semibold text-ink">
+            {todayRow ? todayRow.title : dayIndex < 1 ? "Before the trip" : "After the trip"}
+          </h2>
           <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-xs font-semibold text-ink">
             {countdown}
           </span>
         </div>
-        <div className="mt-3 flex items-center gap-3">
-          <span className="text-3xl font-bold tabular-nums text-ink">
-            {readiness}%
-          </span>
-          <div
-            role="progressbar"
-            aria-label="Trip readiness"
-            aria-valuenow={readiness}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-2 flex-1 overflow-hidden rounded-full bg-ink/10"
-          >
-            <div
-              className="h-full rounded-full bg-matcha transition-all"
-              style={{ width: `${readiness}%` }}
-            />
-          </div>
-        </div>
-        <ul className="mt-4 space-y-2.5">
-          <ReadyRow
-            icon="🏨"
-            label="Hotel nights booked"
-            value={`${bookedNights}/${tripNights}`}
-            pct={hotelsPct}
-          />
-          <ReadyRow
-            icon="✅"
-            label="Checklist"
-            value={`${checkDone}/${checklistRows.length}`}
-            pct={checkPct}
-          />
-        </ul>
-        <p className="mt-3 text-sm text-ink/60">
-          🎫 {bookings} booking{bookings === 1 ? "" : "s"} saved
-        </p>
+        {todayRow ? (
+          <>
+            <p className="mt-0.5 text-sm text-ink/60">{todayRow.city}</p>
+            {todayActs.length > 0 && (
+              <ul className="mt-3 space-y-1.5 text-sm text-ink">
+                {todayActs.slice(0, 5).map((a) => (
+                  <li key={a.id} className="flex gap-3">
+                    <span className="w-12 shrink-0 tabular-nums text-ink/55">{a.time ?? ""}</span>
+                    <span className={a.mustDo ? "font-semibold" : ""}>{a.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link
+              href="/now"
+              className="mt-4 inline-block rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/90"
+            >
+              What now? →
+            </Link>
+          </>
+        ) : (
+          <p className="mt-1 text-sm text-ink/70">{seasonNote}</p>
+        )}
       </section>
-
-      {/* Start date */}
-      <StartDateControl totalDays={dayRows.length} initial={startDate} />
-
-      {/* Stats band */}
-      <div className="grid grid-cols-2 divide-x divide-y divide-ink/10 overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft sm:grid-cols-4 sm:divide-y-0">
-        {stats.map((s) => (
-          <div key={s.label} className="px-4 py-3 text-center">
-            <div className="text-2xl font-bold text-ink">{s.value}</div>
-            <div className="text-xs uppercase tracking-wide text-ink/55">
-              {s.label}
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* Quick links */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -243,72 +157,50 @@ export default async function HomePage() {
         ))}
       </section>
 
-      {/* Route */}
+      {/* Route + where you sleep, merged */}
       <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-soft">
-        <div className="mb-3 flex items-center gap-2">
-          <Icon name="date" size={20} className="h-5 w-5" />
-          <h2 className="font-semibold text-ink">The route</h2>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Icon name="date" size={20} className="h-5 w-5" />
+            <h2 className="font-semibold text-ink">The route</h2>
+          </div>
+          <Link href="/hotels" className="text-sm font-medium text-red hover:underline">
+            Hotels →
+          </Link>
         </div>
         <ol className="relative space-y-3 border-l-2 border-sakura/60 pl-6">
-          {segments.map((seg, i) => (
-            <li key={`${seg.city}-${i}`} className="relative">
-              <span className="absolute -left-[31px] flex h-5 w-5 items-center justify-center rounded-full border-2 border-sakura bg-white text-[10px] font-bold text-ink">
-                {i + 1}
-              </span>
-              <div className="flex flex-wrap items-baseline gap-x-2">
-                <span className="font-semibold text-ink">{seg.city}</span>
-                <span className="text-sm text-ink/55">
-                  {seg.from === seg.to
-                    ? `Day ${seg.from}`
-                    : `Days ${seg.from}–${seg.to}`}
+          {segments.map((seg, i) => {
+            const stay = stayRows.find((s) => seg.from >= s.fromDay && seg.from <= s.toDay);
+            const d1 = dateForDay(startDate, seg.from);
+            const d2 = dateForDay(startDate, seg.to);
+            return (
+              <li key={`${seg.city}-${i}`} className="relative">
+                <span className="absolute -left-[31px] flex h-5 w-5 items-center justify-center rounded-full border-2 border-sakura bg-white text-[10px] font-bold text-ink">
+                  {i + 1}
                 </span>
-              </div>
-            </li>
-          ))}
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-semibold text-ink">{seg.city}</span>
+                  <span className="text-sm text-ink/55">
+                    {seg.from === seg.to ? d1 : `${d1} – ${d2}`}
+                  </span>
+                </div>
+                {stay && seg.city !== "Departure" && (
+                  <p className="text-sm text-ink/60">🛏️ {stay.area}</p>
+                )}
+              </li>
+            );
+          })}
         </ol>
       </section>
 
-      {/* Stay teaser */}
-      <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-soft">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Icon name="hotel" size={20} className="h-5 w-5" />
-            <h2 className="font-semibold text-ink">Where you&apos;ll stay</h2>
-          </div>
-          <Link
-            href="/hotels"
-            className="text-sm font-medium text-red hover:underline"
-          >
-            All hotels →
-          </Link>
+      {/* Settings, tucked away */}
+      <details className="rounded-lg border border-ink/10 bg-white/60 p-4 text-sm shadow-soft">
+        <summary className="cursor-pointer font-medium text-ink/70">Trip settings</summary>
+        <div className="mt-4 space-y-4">
+          <StartDateControl totalDays={totalDays} initial={startDate} />
+          <TripSettingsForm initial={{ title, subtitle, travelers, seasonNote }} />
         </div>
-        <ul className="mt-3 divide-y divide-ink/10">
-          {stayRows.map((s) => (
-            <li
-              key={s.id}
-              className="flex items-baseline justify-between gap-3 py-2 text-sm"
-            >
-              <span className="font-medium text-ink">{s.city}</span>
-              <span className="text-ink/60">{s.area}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Interests */}
-      <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-soft">
-        <h2 className="mb-3 font-semibold text-ink">Built around your interests</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(Object.keys(categoryMeta) as Category[]).map((key) => (
-            <div key={key} className="flex items-center gap-2 text-sm">
-              <CategoryDot category={key} />
-              <span className="font-medium text-ink">
-                {categoryMeta[key].emoji} {categoryMeta[key].label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
+      </details>
     </div>
   );
 }

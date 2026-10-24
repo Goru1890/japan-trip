@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { categoryMeta, type Category } from "@/lib/trip";
 import { dateForDay } from "@/lib/format";
+import { tokyoNow, daysBetween } from "@/lib/now";
 import { mapsUrl } from "@/lib/links";
 import {
   stayForDayIn,
@@ -14,8 +15,7 @@ import {
   type StayView,
 } from "@/lib/stays";
 import { useAudio } from "@/lib/audio";
-import { CategoryBadge } from "@/components/CategoryBadge";
-import { MustDoBadge, SecretBadge } from "@/components/Badge";
+import { SecretBadge } from "@/components/Badge";
 import {
   ActivityForm,
   type ActivityFormValues,
@@ -61,8 +61,33 @@ export function ItineraryBoard({
   const [editDayId, setEditDayId] = useState<number | null>(null);
   const [addingDay, setAddingDay] = useState(false);
   const [insertAt, setInsertAt] = useState<number | null>(null);
+  const [editing, setEditing] = useState(false);
   const filtering = filters.size > 0;
   const lastDay = days.reduce((m, d) => Math.max(m, d.day), 0);
+  // Today (Japan time) → which day card is "now". Past days start collapsed.
+  const todayIdx = daysBetween(startDate, tokyoNow(new Date()).dateIso) + 1;
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const isPast = (d: number) => d < todayIdx;
+  const isOpen = (d: number) => !isPast(d) || expanded.has(d);
+  useEffect(() => {
+    if (todayIdx < 1 || todayIdx > lastDay) return;
+    const el = document.getElementById(`day-${todayIdx}`);
+    if (!el) return;
+    // Leave room for the sticky nav + filter bar.
+    const offset = window.innerWidth < 640 ? 240 : 140;
+    const t = window.setTimeout(() => {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [todayIdx, lastDay]);
+  function toggleDay(d: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
+  }
 
   function toggle(cat: Category) {
     play("tap");
@@ -109,6 +134,18 @@ export function ItineraryBoard({
             Clear
           </button>
         )}
+        <button
+          onClick={() => setEditing((e) => !e)}
+          aria-pressed={editing}
+          className={[
+            "ml-auto rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+            editing
+              ? "border-ink bg-ink text-paper"
+              : "border-ink/15 bg-white text-ink/70 hover:border-ink/30",
+          ].join(" ")}
+        >
+          {editing ? "Done" : "Edit"}
+        </button>
       </div>
 
       {days.map((day) => {
@@ -117,21 +154,37 @@ export function ItineraryBoard({
         const dateLabel = dateForDay(startDate, day.day);
         return (
           <Fragment key={day.id}>
-            {insertAt === day.day ? (
-              <DayForm
-                insertPosition={day.day}
-                onClose={() => setInsertAt(null)}
-              />
-            ) : (
-              <button
-                onClick={() => setInsertAt(day.day)}
-                className="block w-full rounded-md border border-dashed border-ink/15 py-1 text-center text-xs font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
-              >
-                + Insert a day here
-              </button>
-            )}
-            <article className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft">
-            <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-paper/60 px-5 py-4">
+            {editing &&
+              (insertAt === day.day ? (
+                <DayForm
+                  insertPosition={day.day}
+                  onClose={() => setInsertAt(null)}
+                />
+              ) : (
+                <button
+                  onClick={() => setInsertAt(day.day)}
+                  className="block w-full rounded-md border border-dashed border-ink/15 py-1 text-center text-xs font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
+                >
+                  + Insert a day here
+                </button>
+              ))}
+            <article
+              id={`day-${day.day}`}
+              className={[
+                "overflow-hidden rounded-lg border bg-white shadow-soft",
+                day.day === todayIdx
+                  ? "border-red/50 ring-2 ring-red/20"
+                  : "border-ink/10",
+                isPast(day.day) && !isOpen(day.day) ? "opacity-70" : "",
+              ].join(" ")}
+            >
+            <header
+              className={[
+                "flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-paper/60 px-5 py-4",
+                isPast(day.day) ? "cursor-pointer select-none" : "",
+              ].join(" ")}
+              onClick={isPast(day.day) ? () => toggleDay(day.day) : undefined}
+            >
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md bg-ink text-paper">
                   <span className="text-[9px] uppercase leading-none opacity-70">
@@ -141,20 +194,24 @@ export function ItineraryBoard({
                 </span>
                 <div>
                   <h3 className="font-semibold leading-tight text-ink">
-                    {day.title}
+                    {dateLabel ?? `Day ${day.day}`}
+                    <span className="font-normal text-ink/55"> · {day.city}</span>
+                    {day.day === todayIdx && (
+                      <span className="ml-2 rounded-md bg-red px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-paper">
+                        Today
+                      </span>
+                    )}
                   </h3>
-                  <p className="text-sm text-ink/55">
-                    {day.city}
-                    {dateLabel ? ` · ${dateLabel}` : ""}
-                  </p>
+                  <p className="text-sm text-ink/70">{day.title}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {day.restDay && (
-                  <span className="rounded-md border border-matcha/50 bg-matcha/20 px-2.5 py-0.5 text-xs font-medium text-ink">
-                    relaxed
-                  </span>
-                )}
+              {isPast(day.day) && !editing && (
+                <span className="text-xs font-medium text-ink/50">
+                  {isOpen(day.day) ? "Hide" : `${acts.length} stops ▸`}
+                </span>
+              )}
+              {editing && (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() =>
                     setEditDayId(editDayId === day.id ? null : day.id)
@@ -172,9 +229,10 @@ export function ItineraryBoard({
                   className="rounded-md border border-red/30 px-2 py-1 text-xs font-medium text-red/80 hover:bg-red/5"
                 />
               </div>
+              )}
             </header>
 
-            {editDayId === day.id ? (
+            {!isOpen(day.day) ? null : editDayId === day.id ? (
               <div className="px-5 py-4">
                 <DayForm
                   initial={{
@@ -202,6 +260,7 @@ export function ItineraryBoard({
               </div>
             )}
 
+            {isOpen(day.day) && (
             <ul className="divide-y divide-ink/10 border-t border-ink/10">
               {acts.map((act) => {
                 const dim = filtering && !filters.has(act.category);
@@ -233,13 +292,17 @@ export function ItineraryBoard({
                     ].join(" ")}
                   >
                     <div className="w-14 shrink-0 pt-0.5 text-xs font-semibold tabular-nums text-ink/60">
-                      {act.time ?? ""}
+                      <div>{act.time ?? ""}</div>
+                      <div className="mt-0.5 text-base leading-none" aria-hidden title={(categoryMeta[act.category] ?? categoryMeta.city).label}>
+                        {(categoryMeta[act.category] ?? categoryMeta.city).emoji}
+                      </div>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-ink">{act.title}</span>
-                        <CategoryBadge category={act.category} size="sm" />
-                        {act.mustDo && <MustDoBadge />}
+                        <span className={act.mustDo ? "font-semibold text-ink" : "font-medium text-ink"}>
+                          {act.mustDo && <span className="mr-1 text-red" aria-hidden>★</span>}
+                          {act.title}
+                        </span>
                         {act.isSecret && <SecretBadge />}
                       </div>
                       {act.description && (
@@ -284,7 +347,7 @@ export function ItineraryBoard({
                               📌 {linkedResv.title}
                             </span>
                           ))}
-                        {act.canManage && (
+                        {editing && act.canManage && (
                           <>
                             <button
                               onClick={() => setEditId(act.id)}
@@ -309,6 +372,7 @@ export function ItineraryBoard({
               })}
 
               {/* Add activity */}
+              {editing && (
               <li className="px-5 py-3">
                 {addOn === day.day ? (
                   <ActivityForm
@@ -326,9 +390,11 @@ export function ItineraryBoard({
                   </button>
                 )}
               </li>
+              )}
             </ul>
+            )}
 
-            {stay && (
+            {isOpen(day.day) && stay && (
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-ink/10 bg-sky/10 px-5 py-3">
                 <div className="text-sm text-ink">
                   <span className="mr-1" aria-hidden>
@@ -367,7 +433,7 @@ export function ItineraryBoard({
       })}
 
       {/* Add a day */}
-      {addingDay ? (
+      {!editing ? null : addingDay ? (
         <DayForm onClose={() => setAddingDay(false)} />
       ) : (
         <button
