@@ -261,10 +261,6 @@ export default async function NowPage() {
           </ul>
         </section>
       )}
-
-      <p className="text-center text-xs text-ink/60">
-        Built from your itinerary, hotels, travel legs, and bookings.
-      </p>
     </div>
   );
 }

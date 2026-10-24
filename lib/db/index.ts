@@ -25,13 +25,16 @@ const globalForDb = globalThis as unknown as {
 
 export function getDb(): NodePgDatabase<typeof schema> {
   if (!globalForDb.__db) {
+    const url = connectionString();
+    const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
     const pool =
       globalForDb.__pool ??
       new Pool({
-        connectionString: connectionString(),
+        connectionString: url,
         max: 5,
-        // Verify the server certificate (Neon/Vercel present valid certs).
-        ssl: { rejectUnauthorized: true },
+        // Verify the server certificate (Neon/Vercel present valid certs);
+        // a local Postgres has none, so skip SSL there.
+        ssl: local ? false : { rejectUnauthorized: true },
       });
     globalForDb.__pool = pool;
     globalForDb.__db = drizzle(pool, { schema });
