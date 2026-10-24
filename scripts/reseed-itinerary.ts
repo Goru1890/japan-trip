@@ -41,6 +41,22 @@ async function main() {
   const shift = daysBetween(newStart, oldStart);
   console.log(`start date ${oldStart} → ${newStart}  (day shift ${shift >= 0 ? "+" : ""}${shift})`);
 
+  // Safety: seed activities edited in the app keep owner_id null, so the DB can
+  // hold a richer plan than lib/trip.ts. Refuse to wipe it unless forced.
+  const known = new Set(days.flatMap((d) => d.activities.map((a) => a.title)));
+  const unknown = (await db.select().from(activities)).filter(
+    (a) => a.ownerId == null && !known.has(a.title)
+  );
+  if (unknown.length && !process.argv.includes("--force")) {
+    console.log(
+      `\n✋ The database has ${unknown.length} activities that are NOT in lib/trip.ts ` +
+        `(edited in the app). Reseeding would delete them. First 10:`
+    );
+    for (const a of unknown.slice(0, 10)) console.log(`  day ${a.dayNumber}  ${a.time ?? ""}  ${a.title}`);
+    console.log("\nNothing changed. Edit the plan in the app instead, or re-run with --force to replace it.");
+    return;
+  }
+
   if (process.argv.includes("--dry-run")) {
     const acts = await db.select().from(activities);
     const seed = acts.filter((a) => a.ownerId == null);
